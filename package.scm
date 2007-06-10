@@ -8,8 +8,7 @@
   (compound-interface terminfo-core-interface terminfo-capabilities-interface))
 
 (define-structure terminfo-core terminfo-core-interface
-  (open scheme-with-scsh
-        srfi-6 srfi-9 srfi-13 srfi-16)
+  (open scheme-with-scsh srfi-6 srfi-9 srfi-13)
   (files terminfo))
 
 (define-structure terminfo-capabilities terminfo-capabilities-interface
@@ -17,5 +16,5 @@
   (files terminfo-capabilities))
 
 (define-structure terminfo terminfo-interface
-  (open terminfo-core terminfo-capabilities))
+  (open scheme terminfo-core terminfo-capabilities))
 
