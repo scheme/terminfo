@@ -1,4 +1,4 @@
-;;; -*- Mode: Scheme; scheme48-package: ... -*-
+;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 ;;; 
 ;;; terminfo.scm: A port of Paul Foley's terminfo.lisp to Scheme (scsh)
 ;;; 
@@ -45,16 +45,16 @@
 
 (define (read-strings-and-split stream)
   (let loop ((c      (read-char stream))
-             (s      '())
+             (s      "")
              (result '()))
-    (cond ((or (eof-object? c) (zero? (char->ascii c)))
-           (append result (list (list->string s))))
+    (cond ((or (eof-object? c) (zero? (char->integer c)))
+           (reverse (cons s result)))
           ((char=? c #\|)
-           (loop (read-char stream) 
-                 '()  
-                 (append result (list (list->string s)))))
+           (loop (read-char stream)
+                 ""
+                 (cons s result)))
           (else (loop (read-char stream)
-                      (if (null? s) (list c) (append s (list c)))
+                      (string-append/shared s (string c))
                       result)))))
 
 (define (load-terminfo name)
@@ -71,7 +71,7 @@
              (numbers       (make-vector sznumbers -1))
              (strings       (make-vector szstrings -1))
              (stringtable   (make-string szstringtable)))
-        (if (not (= magic #o432)) 
+        (if (not (= magic #o432))
             (error "file format is invalid."))
         (do ((i 0 (+ i 1))) ((>= i szbooleans))
           (vector-set! booleans i (not (zero? (read-byte stream)))))
@@ -97,5 +97,4 @@
   (let ((name (if (not (null? args))
                   (car args)
                   (getenv "TERM"))))
-    (format #t "name is ~A~%" name)
     (set! *terminfo* (load-terminfo name))))
