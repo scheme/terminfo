@@ -1,6 +1,6 @@
-;;; 
+;;;
 ;;; terminfo.scm: A port of Paul Foley's terminfo.lisp to Scheme (scsh)
-;;; 
+;;;
 ;;; Copyright © 2001 Duncan Mak <duncan@ccs.neu.edu>
 ;;;
 
@@ -38,7 +38,7 @@
 
 (define (read-short . args)
   (let* ((s (if (null? args) (current-input-port) (car args)))
-         (n      (+ (read-byte s) 
+         (n      (+ (read-byte s)
                     (* 256 (read-byte s)))))
     (if (> n 32767)
         (- n 65536)
@@ -76,7 +76,7 @@
 (define (read-padding lines . args)
   (let ((s (if (null? args) (current-input-port) (car args))))
     (if (not (and (char=? #\$ (read-char s))
-                  (char=? #\< (read-char s))))        
+                  (char=? #\< (read-char s))))
         (error "Invalid input"))
     (let loop ((time  0)
                (force #f)
@@ -101,7 +101,7 @@
         (cond
          ((eof-object? c) (get-output-string buf))
          ((char=? #\$ c)
-          (let ((padding (read-padding))) 
+          (let ((padding (read-padding)))
             (loop buf
                   (car padding)
                   (cdr padding)
@@ -110,7 +110,7 @@
                   (read-char))))
          (else (write c buf) (loop buf time force rate pad (read-char)))))))
 
-(define (tparm str . args) 
+(define (tparm str . args)
   (if (string? str) str ""))
 
 
