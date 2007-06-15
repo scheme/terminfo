@@ -530,12 +530,3 @@
 (define-capability memory-lock string 411)
 (define-capability memory-unlock string 412)
 (define-capability box-chars-1 string 413)
-
-
-backspaces-with-bs
-crt-no-scrolling
-no-correctly-working-cr
-gnu-has-meta-key
-linefeed-is-newline
-has-hardware-tabs
-return-does-clr-eol
