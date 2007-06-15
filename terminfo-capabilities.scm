@@ -16,22 +16,19 @@
           (vector-ref table index)))))
 
 (define-syntax define-capability
-  (syntax-rules (string)
-    ((_ name string index)
-     (begin (table-set! *capabilities* 
-                        'name 
-                        (cons terminal-strings index))
-            (define (name . args)
-              (tparm (terminfo-capability *terminfo* 'name) args))))
+  (syntax-rules ()
     ((_ name type index)
-     (begin (table-set! *capabilities* 
-                        'name 
+     (begin (table-set! *capabilities*
+                        'name
                         (cons (case 'type
                                 ((boolean) terminal-booleans)
-                                ((integer) terminal-numbers))
+                                ((integer) terminal-numbers)
+                                ((string)  terminal-strings))
                               index))
-            (define (name)
-              (terminfo-capability *terminfo* 'name))))))
+            (define (name . args)
+              (case 'type
+                ((string) (tparm (terminfo-capability *terminfo* 'name) args))
+                (else            (terminfo-capability *terminfo* 'name))))))))
 
 (define-capability auto-left-margin boolean 0)
 (define-capability auto-right-margin boolean 1)
@@ -70,6 +67,14 @@
 (define-capability semi-auto-right-margin boolean 34)
 (define-capability cpi-changes-res boolean 35)
 (define-capability lpi-changes-res boolean 36)
+(define-capability backspaces-with-bs boolean 37)
+(define-capability crt-no-scrolling boolean 38)
+(define-capability no-correctly-working-cr boolean 39)
+(define-capability gnu-has-meta-key boolean 40)
+(define-capability linefeed-is-newline boolean 41)
+(define-capability has-hardware-tabs boolean 42)
+(define-capability return-does-clr-eol boolean 43)
+
 
 (define-capability columns integer 0)
 (define-capability init-tabs integer 1)
@@ -104,6 +109,12 @@
 (define-capability buttons integer 30)
 (define-capability bit-image-entwining integer 31)
 (define-capability bit-image-type integer 32)
+(define-capability magic-cookie-glitch-ul integer 33)
+(define-capability carriage-return-delay integer 34)
+(define-capability new-line-delay integer 35)
+(define-capability backspace-delay integer 36)
+(define-capability horizontal-tab-delay integer 37)
+(define-capability number-of-function-keys integer 38)
 
 (define-capability back-tab string 0)
 (define-capability bell string 1)
@@ -499,3 +510,32 @@
 (define-capability enter-vertical-hl-mode string 391)
 (define-capability set-a-attributes string 392)
 (define-capability set-pglen-inch string 393)
+(define-capability termcap-init2 string 394)
+(define-capability termcap-reset string 395)
+(define-capability linefeed-if-not-lf string 396)
+(define-capability backspace-if-not-bs string 397)
+(define-capability other-non-function-keys string 398)
+(define-capability arrow-key-map string 399)
+(define-capability acs-ulcorner string 400)
+(define-capability acs-llcorner string 401)
+(define-capability acs-urcorner string 402)
+(define-capability acs-lrcorner string 403)
+(define-capability acs-ltee string 404)
+(define-capability acs-rtee string 405)
+(define-capability acs-btee string 406)
+(define-capability acs-ttee string 407)
+(define-capability acs-hline string 408)
+(define-capability acs-vline string 409)
+(define-capability acs-plus string 410)
+(define-capability memory-lock string 411)
+(define-capability memory-unlock string 412)
+(define-capability box-chars-1 string 413)
+
+
+backspaces-with-bs
+crt-no-scrolling
+no-correctly-working-cr
+gnu-has-meta-key
+linefeed-is-newline
+has-hardware-tabs
+return-does-clr-eol
