@@ -1,4 +1,3 @@
-;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 ;;; 
 ;;; terminfo.scm: A port of Paul Foley's terminfo.lisp to Scheme (scsh)
 ;;; 
@@ -9,13 +8,13 @@
 (define *terminfo-directories* '("/usr/share/terminfo"
                                  "/usr/share/misc/terminfo"))
 
-(define-record-type terminfo
-  (make-terminfo names booleans numbers strings)
-  terminfo?
-  (names    terminfo-names)
-  (booleans terminfo-booleans set-terminfo-booleans!)
-  (numbers  terminfo-numbers  set-terminfo-numbers!)
-  (strings  terminfo-strings  set-terminfo-strings!))
+(define-record-type terminal
+  (make-terminal names booleans numbers strings)
+  terminal?
+  (names    terminal-names)
+  (booleans terminal-booleans set-terminal-booleans!)
+  (numbers  terminal-numbers  set-terminal-numbers!)
+  (strings  terminal-strings  set-terminal-strings!))
 
 (define (terminfo-filename name)
   (let loop ((dirs *terminfo-directories*))
@@ -23,39 +22,97 @@
         (let* ((basedir (car dirs))
                (initial (string-take name 1))
                (file    (path-list->file-name (list basedir initial name))))
-          (cond ((file-not-exists? file) 
+          (cond ((file-not-exists? file)
                  (error "Cannot find terminfo named " name))
                 ; TODO: returns only the relative path
                 ((file-symlink? file) (read-symlink file))
-                ((file-readable? file)  file)
+                ((file-readable? file) file)
                 (else (loop (cdr dirs))))))))
 
-(define (read-byte stream)
-  (let ((value (read-char stream)))
+(define (read-byte . args)
+  (let* ((s (if (null? args) (current-input-port) (car args)))
+         (value  (read-char s)))
     (if (eof-object? value)
         (error "invalid data")
         (char->ascii value))))
 
-(define (read-short stream)
-  (let ((n (+ (read-byte stream) 
-              (* 256 (read-byte stream)))))
-    (if (> n 32767) 
-        (- n 65536) 
+(define (read-short . args)
+  (let* ((s (if (null? args) (current-input-port) (car args)))
+         (n      (+ (read-byte s) 
+                    (* 256 (read-byte s)))))
+    (if (> n 32767)
+        (- n 65536)
         n)))
 
-(define (read-strings-and-split stream)
-  (let loop ((c      (read-char stream))
-             (s      "")
-             (result '()))
-    (cond (((zero? (char->ascii c)))
-           (reverse (cons s result)))
-          ((char=? c #\|)
-           (loop (read-char stream)
-                 ""
-                 (cons s result)))
-          (else (loop (read-char stream)
-                      (string-append/shared s (string c))
-                      result)))))
+(define (read-strings-and-split . args)
+  (let ((s (if (null? args) (current-input-port) (car args))))
+    (let loop ((c      (read-char s))
+               (str    "")
+               (result '()))
+      (cond ((or (eof-object? c) (zero? (char->ascii c)))
+             (reverse (cons str result)))
+            ((char=? c #\|)
+             (loop (read-char s)
+                   ""
+                   (cons s result)))
+            (else (loop (read-char s)
+                        (string-append/shared str (string c))
+                        result))))))
+
+;;; Supports exactly *one* decimal point
+(define (read-number . args)
+  (let ((s (if (null? args) (current-input-port) (car args))))
+    (let loop ((c (peek-char s))
+               (v 0))
+      (cond
+       ((eof-object? c) v)
+       ((char-numeric? c) (read-char s)
+        (loop (peek-char s)
+              (+ (* 10 v) (char->digit c))))
+       ((char=? #\. c) (read-char s)
+        (exact->inexact (+ v (/ (char->digit (read-char s)) 10))))
+       (else v)))))
+
+(define (read-padding lines . args)
+  (let ((s (if (null? args) (current-input-port) (car args))))
+    (if (not (and (char=? #\$ (read-char s))
+                  (char=? #\< (read-char s))))        
+        (error "Invalid input"))
+    (let loop ((time  0)
+               (force #f)
+               (c    (peek-char s)))
+      (cond
+       ((eof-object? c)   (error "Missing >"))
+       ((char=? #\>  c)   (values time force))
+       ((char-numeric? c) (loop (read-number s) force (read-char s)))
+       ((char=? #\*  c)   (loop (* time lines)  force (read-char s)))
+       ((char=? #\/  c)   (loop time            #t    (read-char s)))
+       (else (error "Invalid padding specification"))))))
+
+(define (tputs str . args)
+  (if (null? str ) "")
+  (with-current-input-port (open-input-string str)
+      (let loop ((buf   (open-output-string))
+                 (time  0)
+                 (force #f)
+                 (rate  0)
+                 (pad   #\0)
+                 (c     (peek-char)))
+        (cond
+         ((eof-object? c) (get-output-string buf))
+         ((char=? #\$ c)
+          (let ((padding (read-padding))) 
+            (loop buf
+                  (car padding)
+                  (cdr padding)
+                  rate
+                  pad
+                  (read-char))))
+         (else (write c buf) (loop buf time force rate pad (read-char)))))))
+
+(define (tparm str . args) 
+  (if (string? str) str ""))
+
 
 (define (load-terminfo name)
   (call-with-input-file name
@@ -83,17 +140,16 @@
           (vector-set! strings i (read-short stream)))
         (do ((i 0 (+ i 1))) ((>= i szstringtable))
           (string-set! stringtable i (read-char stream)))
-        (let ((tmp (make-vector szstrings)))
-          (do ((i 0 (+ i 1))) ((>= i szstrings))
-            (let* ((length (string-length stringtable))
-                   (start  i)
-                   (end    (string-index stringtable #\0 i length)))
-             (if (positive? (vector-ref strings i))
-                 (vector-set! tmp i (substring stringtable start end)))))
-          (set! strings tmp))
-        (make-terminfo names booleans numbers strings)))))
+        (do ((i 0 (+ i 1))) ((>= i szstrings))
+          (if (positive? (vector-ref strings i))
+              (let* ((start     (vector-ref strings i))
+                     (end       (string-index stringtable (ascii->char 0)
+                                              start szstringtable))
+                     (new-value (substring stringtable start end)))
+                (vector-set! strings i new-value))))
+        (make-terminal names booleans numbers strings)))))
 
-(define (set-terminal . args)
+(define (setup-terminal . args)
   (let* ((term     (if (not (null? args))
                        (car args)
                        (getenv "TERM")))
