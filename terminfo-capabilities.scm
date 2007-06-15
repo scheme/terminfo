@@ -3,33 +3,35 @@
 ;;; see tigetflag, tigetnum, tigetstr
 (define (terminfo-capability terminfo name)
   (let ((capability (table-ref *capabilities* name)))
-    (if (null? terminfo)
-        (error "Missing call to set-terminal"))
+    (if (or (null? terminfo)
+            (not (terminal? terminfo)))
+        (error "Invalid terminfo object"))
     (if (null? capability)
-        (error "Terminfo capability ~S does not exist." name))
-    (if (not (terminal? terminfo))
-        (error "invalid terminfo object"))
+        (error "Capability does not exist:" name))
     (let* ((accessor (car capability))
            (index    (cdr capability))
            (table    (accessor terminfo)))
-      (if (>= index (length table))
-          (error "Out of range: ~A at ~A in table ~A." name index accessor)
-          (let ((value (vector-ref table index)))
-            (if (and  (number? value)
-                      (not (negative? value)))
-                value))))))
+      (if (>= index (vector-length table))
+          -1
+          (vector-ref table index)))))
 
 (define-syntax define-capability
-  (syntax-rules ()
+  (syntax-rules (string)
+    ((_ name string index)
+     (begin (table-set! *capabilities* 
+                        'name 
+                        (cons terminal-strings index))
+            (define (name . args)
+              (tparm (terminfo-capability *terminfo* 'name) args))))
     ((_ name type index)
      (begin (table-set! *capabilities* 
                         'name 
                         (cons (case 'type
                                 ((boolean) terminal-booleans)
-                                ((integer) terminal-numbers)
-                                ((string)  terminal-strings))
+                                ((integer) terminal-numbers))
                               index))
-            (define (name . args) (tparm (terminfo-capability *terminfo* 'name) args))))))
+            (define (name)
+              (terminfo-capability *terminfo* 'name))))))
 
 (define-capability auto-left-margin boolean 0)
 (define-capability auto-right-margin boolean 1)
