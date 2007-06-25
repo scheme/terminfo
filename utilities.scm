@@ -37,14 +37,7 @@
        (set! list (cdr list))
        value))))
 
-(define-syntax when
-  (syntax-rules ()
-    ((_ condition action ...)
-     (if condition
-         (begin action ...)))))
-
 (define (char->digit c)
-  (if (char-numeric? c)
+  (if (char-digit? c)
       (- (char->integer c) (char->integer #\0))
       -1))
-

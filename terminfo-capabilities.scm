@@ -1,7 +1,7 @@
 (define *capabilities* (make-table))
 
 ;;; see tigetflag, tigetnum, tigetstr
-(define (terminfo-capability terminfo name)
+(define (terminal-capability terminfo name)
   (let ((capability (table-ref *capabilities* name)))
     (if (or (null? terminfo)
             (not (terminal? terminfo)))
@@ -27,8 +27,8 @@
                               index))
             (define (name . args)
               (case 'type
-                ((string) (tparm (terminfo-capability *terminfo* 'name) args))
-                (else            (terminfo-capability *terminfo* 'name))))))))
+                ((string) (tparm (terminal-capability *current-terminal* 'name) args))
+                (else            (terminal-capability *current-terminal* 'name))))))))
 
 (define-capability auto-left-margin boolean 0)
 (define-capability auto-right-margin boolean 1)

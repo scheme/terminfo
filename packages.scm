@@ -1,5 +1,6 @@
 (define-interface terminfo-core-interface
-  (export *terminfo* *terminfo-directories* setup-terminal ))
+  (export *current-terminal* *capabilities* *terminfo-directories*
+          setup-terminal terminal-capability tparm tputs))
 
 (define-interface terminfo-capabilities-interface
   (export auto-left-margin
@@ -503,20 +504,11 @@
           box-chars-1
 ))
 
-
-
-
-
-
-
-
-
-
 (define-interface terminfo-interface
   (compound-interface terminfo-core-interface terminfo-capabilities-interface))
 
 (define-structure terminfo terminfo-interface
-  (open scheme scheme-with-scsh srfi-6 srfi-9 srfi-13 tables)
+  (open i/o scheme-with-scsh srfi-6 srfi-9 srfi-13 tables threads)
   (files terminfo
          terminfo-capabilities
          utilities))

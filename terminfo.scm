@@ -4,7 +4,7 @@
 ;;; Copyright © 2001 Duncan Mak <duncan@ccs.neu.edu>
 ;;;
 
-(define *terminfo* '())
+(define *current-terminal* '())
 (define *terminfo-directories* '("/usr/share/terminfo"
                                  "/usr/share/misc/terminfo"))
 
@@ -12,9 +12,9 @@
   (make-terminal names booleans numbers strings)
   terminal?
   (names    terminal-names)
-  (booleans terminal-booleans set-terminal-booleans!)
-  (numbers  terminal-numbers  set-terminal-numbers!)
-  (strings  terminal-strings  set-terminal-strings!))
+  (booleans terminal-booleans)
+  (numbers  terminal-numbers)
+  (strings  terminal-strings))
 
 (define (terminfo-filename name)
   (let loop ((dirs *terminfo-directories*))
@@ -80,39 +80,117 @@
         (error "Invalid input"))
     (let loop ((time  0)
                (force #f)
-               (c    (peek-char s)))
+               (c     (peek-char s)))
       (cond
-       ((eof-object? c)   (error "Missing >"))
-       ((char=? #\>  c)   (values time force))
-       ((char-numeric? c) (loop (read-number s) force (read-char s)))
-       ((char=? #\*  c)   (loop (* time lines)  force (read-char s)))
-       ((char=? #\/  c)   (loop time            #t    (read-char s)))
+       ((eof-object? c) (error "Missing >"))
+       ((char=? #\>  c) (list time force))
+       ((char-digit? c) (loop (read-number s) force (read-char s)))
+       ((char=? #\*  c) (loop (* time lines)  force (read-char s)))
+       ((char=? #\/  c) (loop time            #t    (read-char s)))
        (else (error "Invalid padding specification"))))))
 
-(define (tputs str . args)
-  (if (null? str ) "")
-  (with-current-input-port (open-input-string str)
-      (let loop ((buf   (open-output-string))
-                 (time  0)
-                 (force #f)
-                 (rate  0)
-                 (pad   #\0)
-                 (c     (peek-char)))
+(define (baud-rate port direction)
+  (define (handle-ext speed)
+    (case speed
+      ((exta) 19200)
+      ((extb) 38400)
+      (else   speed)))
+  (let* ((info        (tty-info port))
+         (input-rate  (tty-info:input-speed  info))
+         (output-rate (tty-info:output-speed info)))
+    (case direction
+      ((input)  (handle-ext input-rate))
+      ((output) (handle-ext output-rate)))))
+
+(define (tputs string lines . args)
+  (if (null? string) "")
+  (with-current-ports
+      (open-input-string string)
+      (if (null? args) (current-output-port) (car args))
+      (current-error-port)
+    (lambda ()
+      (let loop ((c (peek-char)))
         (cond
-         ((eof-object? c) (get-output-string buf))
+         ((eof-object? c))
          ((char=? #\$ c)
-          (let ((padding (read-padding)))
-            (loop buf
-                  (car padding)
-                  (cdr padding)
-                  rate
-                  pad
-                  (read-char))))
-         (else (write c buf) (loop buf time force rate pad (read-char)))))))
+          (let* ((padding (read-padding lines))
+                 (time    (car padding))
+                 (force   (cdr padding))
+                 (rate    (baud-rate (current-output-port) 'output)))
+            (if (or force (eq? (xon-xoff) #t))
+                (cond ((no-pad-char) (sleep (/ time 10000.0)))
+                      (else
+                       (do ((i 0 (+ i 1))) ((>= i (ceiling (/ (* rate time) 100000))))
+                         (write (char-padding))
+                         (loop (peek-char))))))))
+         (else (write (read-char))
+               (loop (peek-char))))))))
 
-(define (tparm str . args)
-  (if (string? str) str ""))
+;;;
+;;; See Table 7.3, _Unix_Curses_Explained_, p.101
+;;;
+(define (write-escaped-character)
+  (if (not (char=? #\\ (read-char)))
+      (error "Invalid input")
+      (let ((c (read-char)))
+        (case c
+          ((#\E #\e) (write (ascii->char 27)))
+          ((#\n)     (newline))
+          ((#\l)     (write (ascii->char 10)))
+          ((#\r)     (write (ascii->char 13)))
+          ((#\t)     (write (ascii->char 9)))
+          ((#\b)     (write (ascii->char 8)))
+          ((#\f)     (write (ascii->char 12)))
+          ((#\s)     (write #\space))
+          ((#\,)     (write #\,))
+          ((#\0)     (write (ascii->char 0)))
+          ((#\\)     (write #\\))
+          ((#\^)     (write #\^))
+          ((#\:)     (write #\:))
+          (else      (error "Invalid character: " c))))))
 
+;;; TODO
+(define (write-control-character)
+  (if (not (char=? #\^ (read-char)))
+      (error "Invalid input")
+      (write (read-char))))
+
+(define (tparm s . args)
+  (if (not (string? s)) "")
+  (with-current-ports
+      (open-input-string s)
+      (open-output-string)
+      (current-error-port)
+    (lambda ()
+      (let loop ((c (peek-char)))
+        (cond
+         ((eof-object? c)
+          (get-output-string (current-output-port)))
+         ((char=? #\\ c)
+          (write-escaped-character)
+          (loop (peek-char)))
+         ((char=? #\^ c)
+          (write-control-character)
+          (loop (peek-char)))
+         ((char=? #\% c)
+          (write-parameterized-capability args)
+          (loop (peek-char)))
+         (else (write (read-char))
+               (loop  (peek-char))))))))
+
+(define (write-parameterized-capability args)
+  (if (not (char=? #\% (read-char))) (error "Invalid string"))
+  ;; (letrec ((loop (lambda (c stk)
+;;                    (case c
+;;                      ((%) (write #\%) (loop (read-char) stk))
+;;                      ((+ - * % m) (arithmatic c stk)))))
+;;            (arithmatic (lambda (c stk)
+;;                          ()))
+;;            (constant-integer (lambda (c stk)
+;;                                ))
+;;            )
+;;     (loop (read-char) '()))
+  )
 
 (define (load-terminfo name)
   (call-with-input-file name
@@ -154,4 +232,5 @@
                        (car args)
                        (getenv "TERM")))
          (filename (terminfo-filename term)))
-    (set! *terminfo* (load-terminfo filename))))
+    (set! *current-terminal* (load-terminfo filename))
+    *current-terminal*))
