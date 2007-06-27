@@ -4,17 +4,17 @@
 ;;; Copyright © 2007 Duncan Mak <duncan@ccs.neu.edu>
 ;;;
 
-(define *current-terminal* '())
+(define *current-terminal*     '())
 (define *terminfo-directories* '("/usr/share/terminfo"
                                  "/usr/share/misc/terminfo"))
 
 (define-record-type terminal
   (make-terminal names booleans numbers strings)
   terminal?
-  (names    terminal-names)
-  (booleans terminal-booleans)
-  (numbers  terminal-numbers)
-  (strings  terminal-strings))
+  (names    terminal:names)
+  (booleans terminal:booleans)
+  (numbers  terminal:numbers)
+  (strings  terminal:strings))
 
 (define (terminfo-filename name)
   (let loop ((dirs *terminfo-directories*))
@@ -54,71 +54,61 @@
                 (cons char result))))))
 
 ;;; Supports exactly *one* decimal point
-(define (read-number . args)
-  (let-optionals args ((s (current-input-port)))
-    (let loop ((c      (peek-char s))
-               (result '()))
-      (case c
-        ((#\.)
-         (read-char) ; skip pass the .
-         (string->number (reverse-list->string (cons (read-char) result))))
-        ((#\>) ; this par
-         (string->number (reverse-list->string result))
-         )
-            (else (loop (peek-char) (cons (read-char) result)))))))
-
-(define (read-padding lines . args)
-  (let-optionals args ((s (current-input-port)))
-    (if (not (and (char=? #\$ (read-char s))
-                  (char=? #\< (read-char s))))
-        (error "Invalid input"))
-    (let loop ((time  0)
-               (force #f)
-               (c     (peek-char s)))
+(define (read-number s i)
+  (let loop ((j i))
+    (let ((char (string-ref s j)))
       (cond
-       ((eof-object? c) (error "Missing >"))
-       ((char=? #\>  c) (list time force))
-       ((char-digit? c) (loop (read-number s) force (read-char s)))
-       ((char=? #\*  c) (loop (* time lines)  force (read-char s)))
-       ((char=? #\/  c) (loop time            #t    (read-char s)))
-       (else (error "Invalid padding specification"))))))
+       ((char=? #\. char)
+        (values (string->number (substring s i (+ 2 j)))
+                (+ 2 j)))
+       ((not (char-digit? char))
+        (values (string->number (substring s i j))
+                (+ 1 j)))
+       (else (loop (+ 1 j)))))))
 
-(define (baud-rate port direction)
-  (define (handle-ext speed)
-    (case speed
+(define (read-padding str lines)
+  (if (not (and (char=? #\$ (string-ref str 0))
+                (char=? #\< (string-ref str 1))))
+      (error "Invalid input"))
+  (let loop ((time  0)
+             (force #f)
+             (i     2))
+    (case (string-ref str i)
+      ((#\>) (values time force))
+      ((#\*) (loop (* time lines) force (+ 1 i)))
+      ((#\/) (loop time           #t    (+ 1 i)))
+      (else
+       (if (not (zero? time))
+           (error str " is not well-formed.")
+           (let ((time j (read-number str i)))
+             (loop time force j)))))))
+
+(define (baud-rate port)
+  (let* ((info (tty-info port))
+         (rate (tty-info:output-speed info)))
+    (case rate
       ((exta) 19200)
       ((extb) 38400)
-      (else   speed)))
-  (let* ((info        (tty-info port))
-         (input-rate  (tty-info:input-speed  info))
-         (output-rate (tty-info:output-speed info)))
-    (case direction
-      ((input)  (handle-ext input-rate))
-      ((output) (handle-ext output-rate)))))
+      (else rate))))
 
-(define (tputs string lines . args)
-  (if (null? string) "")
-  (with-current-ports
-      (open-input-string string)
-      (if (null? args) (current-output-port) (car args))
-      (current-error-port)
-    (lambda ()
-      (let loop ((c (peek-char)))
-        (cond
-         ((eof-object? c))
-         ((char=? #\$ c)
-          (let* ((padding (read-padding lines))
-                 (time    (car padding))
-                 (force   (cdr padding))
-                 (rate    (baud-rate (current-output-port) 'output)))
-            (if (or force (eq? (xon-xoff) #t))
-                (cond ((no-pad-char) (sleep (/ time 10000.0)))
-                      (else
-                       (do ((i 0 (+ i 1))) ((>= i (ceiling (/ (* rate time) 100000))))
-                         (write (char-padding))
-                         (loop (peek-char))))))))
-         (else (write (read-char))
-               (loop (peek-char))))))))
+(define (tputs s lines . args)
+  (let-optionals args ((output-port (current-output-port)))
+    (let loop ((i 0))
+      (case (string-ref s i)
+        ((#\$)
+         (let* ((substr (substring s i (string-index s #\>)))
+                (time
+                 forced (read-padding substr lines))
+                (rate   (baud-rate (current-input-port))))
+           (if (or force (xon-xoff))
+               (if (no-pad-char)
+                   (sleep (/ time 10000.0))
+                   (do ((i 0 (+ i 1))) ((>= i (ceiling (/ (* rate time) 100000))))
+                     (write (char-padding) output-port)
+                     (loop (+ 1 i))))
+               (loop (+ 1 i)))))
+        (else (write (string-ref s i))
+              (loop (+ 1 i)))))))
 
 ;;;
 ;;; See Table 7.3, _Unix_Curses_Explained_, p.101
@@ -144,14 +134,12 @@
           ((#\:) (write #\:))
           (else  (error "Invalid character: " c))))))
 
-;;; TODO
 (define (write-control-character)
   (if (not (char=? #\^ (read-char)))
       (error "Invalid input")
       (write (read-char))))
 
 (define (tparm s . args)
-  (if (not (string? s)) "")
   (with-current-ports
       (open-input-string s)
       (open-output-string)
@@ -213,7 +201,7 @@
              (strings       (make-vector szstrings -1))
              (stringtable   (make-string szstringtable)))
         (if (not (= magic #o432))
-            (error "this file is invalid: " name))
+            (error name " is not well-formed"))
         (do ((i 0 (+ i 1))) ((>= i szbooleans))
           (vector-set! booleans i (not (zero? (read-byte)))))
         (if (odd? (+ sznames szbooleans))
@@ -234,9 +222,7 @@
         (make-terminal names booleans numbers strings)))))
 
 (define (setup-terminal . args)
-  (let* ((term     (if (not (null? args))
-                       (car args)
-                       (getenv "TERM")))
-         (filename (terminfo-filename term)))
-    (set! *current-terminal* (load-terminfo filename))
-    *current-terminal*))
+  (let-optionals ((term (getenv "TERM")))
+    (let ((filename (terminfo-filename term)))
+      (set! *current-terminal* (load-terminfo filename))
+      *current-terminal*)))
