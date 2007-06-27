@@ -26,9 +26,12 @@
                                 ((string)  terminal:strings))
                               index))
             (define (name . args)
-              (case 'type
-                ((string) (tparm (terminal-capability *current-terminal* 'name) args))
-                (else            (terminal-capability *current-terminal* 'name))))))))
+              (let ((value (terminal-capability *current-terminal* 'name)))
+                (if (negative? value)
+                    (error 'name "This capability is undefined.")
+                    (if (eq? 'string 'type)
+                        (tparm value args)
+                        value))))))))
 
 (define-capability auto-left-margin boolean 0)
 (define-capability auto-right-margin boolean 1)
@@ -74,7 +77,6 @@
 (define-capability linefeed-is-newline boolean 41)
 (define-capability has-hardware-tabs boolean 42)
 (define-capability return-does-clr-eol boolean 43)
-
 
 (define-capability columns integer 0)
 (define-capability init-tabs integer 1)
