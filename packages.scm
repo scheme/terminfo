@@ -508,8 +508,46 @@
   (compound-interface terminfo-core-interface terminfo-capabilities-interface))
 
 (define-structure terminfo terminfo-interface
-  (open i/o scheme-with-scsh srfi-6 srfi-9 srfi-13 tables threads)
+  (open
+   srfi-6 srfi-9 srfi-13 srfi-71
+   i/o let-opt scheme-with-scsh tables threads)
   (files terminfo
          terminfo-capabilities
          utilities))
+
+; SRFI 71: Extended LET-syntax for multiple values
+
+(define-interface srfi-71-interface
+  (export ((let let* letrec) :syntax)
+          ((values->list values->vector) :syntax)
+          uncons
+          uncons-2
+          uncons-3
+          uncons-4
+          uncons-cons
+          unlist
+          unvector))
+
+(define-structure srfi-71*
+  (export ((srfi-let srfi-let* srfi-letrec) :syntax)
+          ((values->list values->vector) :syntax)
+          uncons
+          uncons-2
+          uncons-3
+          uncons-4
+          uncons-cons
+          unlist
+          unvector)
+  (open (modify scheme
+                (rename (let r5rs-let)
+                        (let* r5rs-let*)
+                        (letrec r5rs-letrec))))
+  (files srfi-71))
+
+(define-structure srfi-71 srfi-71-interface
+  (open (modify srfi-71*
+                (rename (srfi-let let)
+                        (srfi-let* let*)
+                        (srfi-letrec letrec)))))
+
 
