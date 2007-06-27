@@ -1,16 +1,16 @@
 (define *capabilities* (make-table))
 
 ;;; see tigetflag, tigetnum, tigetstr
-(define (terminal-capability terminfo name)
+(define (terminal-capability terminal name)
   (let ((capability (table-ref *capabilities* name)))
-    (if (or (null? terminfo)
-            (not (terminal? terminfo)))
+    (if (or (null? terminal)
+            (not (terminal? terminal)))
         (error "Invalid terminfo object"))
     (if (null? capability)
         (error "Capability does not exist:" name))
     (let* ((accessor (car capability))
            (index    (cdr capability))
-           (table    (accessor terminfo)))
+           (table    (accessor terminal)))
       (if (>= index (vector-length table))
           -1
           (vector-ref table index)))))
@@ -21,9 +21,9 @@
      (begin (table-set! *capabilities*
                         'name
                         (cons (case 'type
-                                ((boolean) terminal-booleans)
-                                ((integer) terminal-numbers)
-                                ((string)  terminal-strings))
+                                ((boolean) terminal:booleans)
+                                ((integer) terminal:numbers)
+                                ((string)  terminal:strings))
                               index))
             (define (name . args)
               (case 'type
