@@ -191,7 +191,7 @@
           lab-f9
           meta-off
           meta-on
-          newline
+          new-line
           pad-char
           parm-dch
           parm-delete-line
