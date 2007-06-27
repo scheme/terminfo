@@ -136,11 +136,6 @@
           ((#\:) (write #\:))
           (else  (error c "This is an invalid escape character."))))))
 
-(define (letter-position c)
-  (if (char-alphabetic? c)
-      (1+ (- (char->ascii (char-upcase c)) (char->ascii #\A)))
-      (error c "This is not a letter")))
-
 (define (write-control-character c . args)
   (let-optionals args ((output-port (current-output-port)))
     (with-current-output-port output-port
@@ -152,7 +147,12 @@
           ((#\^) (write (ascii->char 36)))  ; Record separator
           ((#\_) (write (ascii->char 37)))  ; Unit separator
           ((#\?) (write (ascii->char 177))) ; Delete
-          (else  (write (ascii->char (letter-position c))))))))
+          (else  (write (ascii->char (letter->number c))))))))
+
+(define (write-param-capability s . args)
+  (let-optionals args ((output-port (current-output-port)))
+    (with-current-output-port output-port
+        (let loop ((i 1))))))
 
 (define (tparm s . args)
   (with-current-output-port (open-output-string)
@@ -164,34 +164,9 @@
               (case (string-ref s i)
                 ((#\\) (write-escaped-character (string-ref s (1+ i))))
                 ((#\^) (write-control-character (string-ref s (1+ i))))
-                ((#\%) (write-param-capability (substring s (1+ i) len) args))
+                ((#\%) (write-param-capability (substring s i len) args))
                 (else  (write-char (string-ref s i))))
               (loop (1+ i) len))))))
-
-(define (write-param-capability s . args) #t)
-;; (define (write-parameterized-capability args)
-;;   (if (not (char=? #\% (read-char))) (error "Invalid string"))
-;;   (letrec ((loop (lambda (c stk)
-;;                    (case c
-;;                      ((#\%) (write #\%)
-;;                       (loop (read-char) stk))
-;;                      ((#\+ #\- #\* #\% #\m)
-;;                       (loop (read-char) (arithmatic c stk)))
-;;                      ((#\{)
-;;                       (loop (read-char) (push-integer-constant c stk)))
-;;                      ((#\l)
-;;                       (loop (read-char) (pop-string-addr+len c stk)))
-;;                      ((#\i)
-;;                       )
-
-;; )))
-
-;;            (arithmatic (lambda (c stk)
-;;                          ()))
-;;            (push-integer-constant (lambda (c stk)
-;;                                )))
-;;     (loop (read-char) '()))
-;;   )
 
 (define (load-terminfo name)
   (with-input-from-file name
