@@ -1,3 +1,6 @@
+;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
+;;;
+
 (define *capabilities* (make-table))
 
 ;;; see tigetflag, tigetnum, tigetstr

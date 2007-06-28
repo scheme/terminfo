@@ -1,3 +1,4 @@
+;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 ;;;
 ;;; terminfo.scm: Terminfo API for SCSH
 ;;;
