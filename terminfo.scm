@@ -96,7 +96,7 @@
                        (output-port (current-output-port)))
     (let loop ((i 0)
                (len (string-length s)))
-      (if (<= i len)
+      (if (< i len)
           (case (string-ref s i)
             ((#\$)
              (let* ((substr (substring s i (1+ (string-index s #\>))))
@@ -149,24 +149,90 @@
           ((#\?) (write (ascii->char 177))) ; Delete
           (else  (write (ascii->char (letter->number c))))))))
 
-(define (write-param-capability s . args)
+(define (write-param-capability s i stack svars dvars params . args)
   (let-optionals args ((output-port (current-output-port)))
     (with-current-output-port output-port
-        (let loop ((i 1))))))
+        (case (string-ref s i)
+          ((#\%) ; %% -> outputs `%'
+           (write-char #\%)
+           (values (1+ i) stack svars dvars))
 
-(define (tparm s . args)
+          ((#\c) ; %c -> print pop() like %c in printf
+           (let* ((v   (pop stack))
+                  (val (if (number? v) (ascii->char v) v)))
+             (write-char val)
+             (values (1+ i) (cdr stack) svars dvars)))
+
+          ((#\s) ; %s -> print pop() like %s in printf
+           (write (pop stack))
+           (values (1+ i) (cdr stack) svars dvars))
+
+          ((#\p) ; %p[1-9] -> push i-th parameter
+           (let* ((idx   (char->digit (string-ref s (1+ i))))
+                  (param (list-ref params (- 1 idx))))
+             (values (+ 2 i) (push param stack) svars dvars)))
+
+          ((#\P) ; %P[a-z] -> set variable [a-z] to pop()
+           (let* ((c   (string-ref s (1+ i)))
+                  (idx (letter->number c))
+                  (var (if (char-upper-case? c) svars dvars)))
+             (vector-set! var idx (pop stack))
+             (values (+ 2 i) (cdr stack) svars dvars)))
+
+          ((#\g) ; %g[a-z] -> get variable [a-z] and push it
+           (let* ((c   (string-ref s (1+ i)))
+                  (idx (letter->number c))
+                  (var (if (char-upper-case? c) svars dvars))
+                  (val (vector-ref var idx)))
+             (values (+ 2 i) (push val stack) svars dvars)))
+
+          ((#\') ; %'c' -> push char constant c
+           (let ((c (string-ref s (1+ i))))
+             (values (+ 3 i) (push c stack) svars dvars)))
+
+          ((#\{) ; %{nn} -> push integer constant nn
+           (let* ((end (string-index s #\} i))
+                  (str (substring s (1+ i) end))
+                  (nn  (string->number str)))
+             (values (1+ end) (push nn stack) svars dvars)))
+
+          ((#\l) ; %l -> push strlen (pop)
+           (let ((val (digit->char (string-length (pop stack)))))
+             (values (1+ i) (push val (cdr stack)) svars dvars)))
+
+          ; %op -> push (pop() op pop())
+          ((#\+ #\- #\* #\/ #\m #\& #\| #\^ #\= #\> #\<)
+           (let* ((c   (string-ref s i))
+                  (op  (char->procedure c))
+                  (x   (first stack))
+                  (y   (second stack))
+                  (val (op x y)))
+             (values (1+ i) (push val (cddr stack)) svars dvars)))))))
+
+(define (tparm s . params)
   (with-current-output-port (open-output-string)
-      (let loop ((i   0)
-                 (len (string-length s)))
+      (let loop ((i     0)
+                 (stack '())
+                 (svars (make-vector 26 0))
+                 (dvars (make-vector 26 0))
+                 (len   (string-length s)))
         (if (>= i len)
             (get-output-string (current-output-port))
-            (begin
-              (case (string-ref s i)
-                ((#\\) (write-escaped-character (string-ref s (1+ i))))
-                ((#\^) (write-control-character (string-ref s (1+ i))))
-                ((#\%) (write-param-capability (substring s i len) args))
-                (else  (write-char (string-ref s i))))
-              (loop (1+ i) len))))))
+            (case (string-ref s i)
+              ((#\\)
+               (write-escaped-character (string-ref s (1+ i)))
+               (loop (1+ i) stack svars dvars len))
+              ((#\^)
+               (write-control-character (string-ref s (1+ i)))
+               (loop (1+ i) stack svars dvars len))
+              ((#\%) (let* ((i
+                             stack
+                             svars
+                             dvars (write-param-capability
+                                    s (1+ i) stack svars dvars params)))
+                       (loop i stack svars dvars len)))
+              (else (write-char (string-ref s i))
+                    (loop (1+ i) stack svars dvars len)))))))
 
 (define (load-terminfo name)
   (with-input-from-file name
