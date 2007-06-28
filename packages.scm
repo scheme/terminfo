@@ -509,7 +509,7 @@
 
 (define-structure terminfo terminfo-interface
   (open
-   srfi-6 srfi-9 srfi-13 srfi-71
+   srfi-1 srfi-6 srfi-9 srfi-13 srfi-71
    i/o let-opt scheme-with-scsh tables threads)
   (files terminfo
          terminfo-capabilities
