@@ -29,7 +29,7 @@
                                 ((string)  terminal:strings))
                               index))
             (define (name . args)
-              (let ((value (terminal-capability *current-terminal* 'name)))
+              (let ((value (terminal:capability *current-terminal* 'name)))
                 (if (and (number? value) (negative? value))
                     (error 'name "This capability is undefined.")
                     (if (eq? 'type 'string)

@@ -1,7 +1,9 @@
 ;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 (define-interface terminfo-core-interface
-  (export *current-terminal* *capabilities* *terminfo-directories*
-          setup-terminal terminal:capability terminal:names tparm tputs))
+  (export *capabilities* *current-terminal* *terminfo-directories*
+          setup-terminal
+          terminal:capability terminal:names
+          tparm tputs))
 
 (define-interface terminfo-capabilities-interface
   (export auto-left-margin

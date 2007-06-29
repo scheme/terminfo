@@ -208,7 +208,20 @@
                   (x   (first stack))
                   (y   (second stack))
                   (val (op x y)))
-             (values (1+ i) (push val (cddr stack)) svars dvars)))))))
+             (values (1+ i) (push val (cddr stack)) svars dvars)))
+          ((#\i)
+           (let* ((length (length params))
+                  (incr (lambda (params)
+                          (cond
+                           ((null? params) params)
+                           ((= 1 length)
+                            (cons (1+ (first params))
+                                  (cdr params)))
+                           (else
+                            (cons (1+ (first params))
+                                  (1+ (second params))
+                                  (cddr params)))))))
+             (values (1+ i) stack svars dvars (incr params))))))))
 
 (define (tparm s . params)
   (with-current-output-port (open-output-string)
