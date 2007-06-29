@@ -219,8 +219,8 @@
                                   (cdr params)))
                            (else
                             (cons (1+ (first params))
-                                  (1+ (second params))
-                                  (cddr params)))))))
+                                  (cons (1+ (second params))
+                                        (cddr params))))))))
              (values (1+ i) stack svars dvars (incr params))))))))
 
 (define (tparm s . params)
