@@ -1,3 +1,4 @@
+;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 (define-interface terminfo-core-interface
   (export *current-terminal* *capabilities* *terminfo-directories*
           setup-terminal terminal:capability terminal:names tparm tputs))
