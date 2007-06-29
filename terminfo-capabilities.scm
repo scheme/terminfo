@@ -30,9 +30,9 @@
                               index))
             (define (name . args)
               (let ((value (terminal-capability *current-terminal* 'name)))
-                (if (negative? value)
+                (if (and (number? value) (negative? value))
                     (error 'name "This capability is undefined.")
-                    (if (eq? 'string 'type)
+                    (if (eq? 'type 'string)
                         (tparm value args)
                         value))))))))
 
