@@ -4,7 +4,7 @@
 (define *capabilities* (make-table))
 
 ;;; see tigetflag, tigetnum, tigetstr
-(define (terminal-capability terminal name)
+(define (terminal:capability terminal name)
   (let ((capability (table-ref *capabilities* name)))
     (if (or (null? terminal)
             (not (terminal? terminal)))

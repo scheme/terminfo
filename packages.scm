@@ -1,6 +1,6 @@
 (define-interface terminfo-core-interface
   (export *current-terminal* *capabilities* *terminfo-directories*
-          setup-terminal terminal-capability tparm tputs))
+          setup-terminal terminal:capability terminal:names tparm tputs))
 
 (define-interface terminfo-capabilities-interface
   (export auto-left-margin
