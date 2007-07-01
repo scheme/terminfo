@@ -144,10 +144,10 @@
     ((i:let "wrap" #t ((v t) ...) body cwv ...)
      (r5rs-let ((v i:undefined) ...) ; (*)
        (i:let "wraprec" ((v t) ...) body cwv ...)))
-    
+
 ; (i:let "wraprec" ((v t) ...) body cwv ...)
 ;   generate the inner code for a letrec. The variables v ...
-;   are the user-visible variables (bound outside), and t ... 
+;   are the user-visible variables (bound outside), and t ...
 ;   are the temporary variables bound by the cwv consumers.
 
     ((i:let "wraprec" ((v t) ...) (body ...))
@@ -168,7 +168,7 @@
 ;   an ordinary named let.
 
     ((i:named-let tag vxs body ())
-     (r5rs-let tag vxs . body))    
+     (r5rs-let tag vxs . body))
     ((i:named-let tag (vx ...) body (((values v) x) bs ...))
      (i:named-let tag (vx ... (v x)) body (bs ...)))
     ((i:named-let tag (vx ...) body ((v x) bs ...))

@@ -249,7 +249,7 @@
           ((negative? base)
            (string-upcase (number->string v (* -1 base))))
           (else (number->string v base))))
-  (define (incr-if t v i) (if t (+ (* 10 v) i) v))
+  (define (incr v i) (+ (* 10 v) i))
   (let-optionals args ((output-port (current-output-port)))
     (with-current-output-port output-port
         (letrec
@@ -274,11 +274,12 @@
                           (loop (1+ i) (cons c flags) width precision saw-dot?))
                          ((char=? c #\.)
                           (loop (1+ i) flags width precision #t))
-                         ((char-digit? c)
-                          (loop (1+ i) flags
-                                (incr-if (not saw-dot?) width (char->digit c))
-                                (incr-if saw-dot? precision (char->digit c))
-                                saw-dot?))
+                         ((char-digit? c) =>
+                          (lambda (x)
+                            (loop (1+ i) flags
+                                  (if (not saw-dot?) width (incr width x))
+                                  (if saw-dot? precision (incr precision x))
+                                  saw-dot?)))
                          ((char-specifier? c) =>
                           (lambda (base)
                             (print base flags width precision)
