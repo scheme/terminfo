@@ -205,11 +205,13 @@
           ; %op -> push (pop() op pop())
           ((#\+ #\- #\* #\/ #\m #\& #\| #\^ #\= #\> #\<)
            (let* ((c   (string-ref s i))
-                  (op  (char->procedure c))
-                  (x   (first stack))
-                  (y   (second stack))
-                  (val (op x y)))
-             (values (1+ i) (push val (cddr stack)) svars dvars)))
+                  (len (length stack))
+                  (op  (char->procedure c)))
+             (if (>= len 2)
+                 (values (1+ i) (push (op (first stack)
+                                          (second stack))
+                                      (cddr stack)) svars dvars)
+                 (error "There are insufficient values on the stack."))))
           ; %i   add 1 to first two parameters (for ANSI terminals)
           ((#\i)
            (let ((incr (lambda (v)
@@ -226,89 +228,64 @@
 
           ;; %[[:]flags][width[.precision]][doxXs]
           ;;  as in printf, flags are [-+#] and space
-          (else
-           (letrec ((char-specifier?
-                     (lambda (c)
-                       (case c
-                         ((#\d #\o #\x #\X #\s) #t)
-                         (else #f))))
-                    (char-flag?
-                     (lambda (c)
-                       (case c
-                         ((#\+ #\- #\# #\space) #t)
-                         (else #f))))
-                    (->number
-                     (lambda (x)
-                       (cond ((char? x) (char->ascii x))
-                             ((number? x) x)
-                             (else (error x "This is invalid.")))))
-                    (incr (lambda (v i) (+ (* 10 v) i)))
-                    (print
-                     (lambda (flags width precision specifier)
-                       (let* ((value  (pop stack))
-                              (nvalue (->number value))
-                              (svalue ""))
-                         (set! svalue
-                               (case specifier
-                                 ((#\d) (number->string nvalue 10))
-                                 ((#\o) (number->string nvalue 8))
-                                 ((#\x) (number->string nvalue 16))
-                                 ((#\X) (string-upcase
-                                         (number->string nvalue 16)))
-                                 ((#\s) value)))
-                         (if (not (zero? precision))
-                             )
-                         (case flag
-                           ((#\+)
-                            (set! svalue
-                                  (string-append
-                                   (if (positive? nvalue) "+" "-")
-                                   svalue)))
-                           ((#\-)
-                            (set! svalue (string-pad svalue width)))
-                           ((#\space)
-                            (let ((prefix (string-take svalue)))
-                              (if (not (or (char=? prefix #\+)
-                                           (char=? prefix #\-)))
-                                  (set! svalue (string-append " " svalue)))))
-                           ((#\#)
-                            (set! svalue
-                                  (string-append
-                                   (case specifier
-                                     ((#\o) "0")
-                                     ((#\x) "0x")
-                                     ((#\X) "0X")
-                                     (else
-                                      (error "Not applicable for specifier:") specifier))
-                                   svalue))))
-                         (display svalue))))
-                    (loop
-                     (lambda (i flags width precision saw-colon saw-decimal)
-                       (let ((c (string-ref s i)))
-                         (cond
-                          ((char=? c #\:)
-                           (loop (1+ i) flags width precision #t saw-decimal))
-                          ((and (char-flag? c) saw-colon)
-                           (loop (1+ i)
-                                 (cons c flags)
-                                 width precision saw-colon saw-decimal))
-                          ((char=? c #\.)
-                           (loop (1+ i) flags width precision saw-colon #t))
-                          ((char-digit? c)
-                           (loop (1+ i) flags
-                                 (if saw-decimal
-                                     width
-                                     (incr width (char->digit c)))
-                                 (if saw-decimal
-                                     (incr precision (char->digit c))
-                                     precision)
-                                 saw-colon
-                                 saw-decimal))
-                          ((char-specifier? c)
-                           (print flags width precision c)
-                           (values (1+ i) (cdr stack) svars dvars))
-                          (else (error c "This is invalid.")))))))
-             (loop i '() 0 0 #f #f)))))))
+          (else (write-format-string s i stack svars dvars params))))))
+
+(define (write-format-string s i stack svars dvars params . args)
+  (define (char-specifier? c)
+    (case c
+      ((#\d) 10)
+      ((#\o) 8)
+      ((#\x) 16) ((#\X) -16)
+      ((#\s) 0)
+      (else #f)))
+  (define (char-flag? c)
+    (member? c '(#\+ #\- #\# #\space)))
+  (define (->number x)
+    (cond ((char? x) (char->ascii x))
+          ((number? x) x)
+          (else (error x "This is invalid."))))
+  (define (->string v base)
+    (cond ((zero? base) v)
+          ((negative? base)
+           (string-upcase (number->string v (* -1 base))))
+          (else (number->string v base))))
+  (define (incr-if t v i) (if t (+ (* 10 v) i) v))
+  (let-optionals args ((output-port (current-output-port)))
+    (with-current-output-port output-port
+        (letrec
+            ((print
+              (lambda (base flags width precision)
+                (let* ((value  (pop stack))
+                       (nvalue (->number value))
+                       (svalue (->string nvalue base)))
+                  (format (current-error-port)
+                   "svalue: ~A, base: ~A, flags: ~A width: ~A precision: ~A~%"
+                   svalue base flags width precision)
+                  (display svalue))))
+             (loop
+              (lambda (i flags width precision saw-dot?)
+                (let ((length (string-length s)))
+                  (if (< i length)
+                      (let ((c (string-ref s i)))
+                        (cond
+                         ((char=? c #\:)
+                          (loop (1+ i) flags width precision saw-dot?))
+                         ((char-flag? c)
+                          (loop (1+ i) (cons c flags) width precision saw-dot?))
+                         ((char=? c #\.)
+                          (loop (1+ i) flags width precision #t))
+                         ((char-digit? c)
+                          (loop (1+ i) flags
+                                (incr-if (not saw-dot?) width (char->digit c))
+                                (incr-if saw-dot? precision (char->digit c))
+                                saw-dot?))
+                         ((char-specifier? c) =>
+                          (lambda (base)
+                            (print base flags width precision)
+                            (values (1+ i) (cdr stack) svars dvars)))
+                         (else (error c "This is not recognized."))))
+                      (error "Missing format specifier [dosxX]"))))))
+          (loop i '() 0 0 #f)))))
 
 (define (tparm s . params)
   (with-current-output-port (open-output-string)
