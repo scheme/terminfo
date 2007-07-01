@@ -512,7 +512,7 @@
 
 (define-structure terminfo terminfo-interface
   (open
-   srfi-1 srfi-6 srfi-9 srfi-13 srfi-71
+   srfi-1 srfi-6 srfi-9 srfi-13 srfi-71 srfi-87
    i/o let-opt scheme-with-scsh tables threads)
   (files terminfo
          terminfo-capabilities
@@ -553,4 +553,17 @@
                         (srfi-let* let*)
                         (srfi-letrec letrec)))))
 
+;;; SRFI 87: => in case clauses
 
+(define-interface srfi-87-interface
+  (export ((case) :syntax)))
+
+(define-structure srfi-87*
+    (export ((srfi-case) :syntax))
+  (open (modify scheme
+                (rename (case r5rs-case))))
+    (files srfi-87))
+
+(define-structure srfi-87 srfi-87-interface
+  (open (modify srfi-87*
+                (rename (srfi-case case)))))
