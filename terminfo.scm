@@ -207,11 +207,12 @@
            (let* ((c   (string-ref s i))
                   (len (length stack))
                   (op  (char->procedure c)))
-             (if (>= len 2)
-                 (values (1+ i) (push (op (first stack)
-                                          (second stack))
-                                      (cddr stack)) svars dvars)
-                 (error "There are insufficient values on the stack."))))
+             (if (< len 2)
+                 (error "There are insufficient values on the stack.")
+                 (values
+                  (1+ i)
+                  (push (op (first stack) (second stack)) (cddr stack))
+                  svars dvars))))
           ; %i   add 1 to first two parameters (for ANSI terminals)
           ((#\i)
            (let ((incr (lambda (v)
@@ -277,8 +278,8 @@
                          ((char-digit? c) =>
                           (lambda (x)
                             (loop (1+ i) flags
-                                  (if (not saw-dot?) width (incr width x))
-                                  (if saw-dot? precision (incr precision x))
+                                  (if saw-dot? width (incr width x))
+                                  (if saw-dot? (incr precision x) precision)
                                   saw-dot?)))
                          ((char-specifier? c) =>
                           (lambda (base)

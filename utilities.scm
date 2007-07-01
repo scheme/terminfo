@@ -39,7 +39,10 @@
       (error digit "This is not a number")))
 
 (define push cons)
-(define pop car)
+(define (pop stack)
+  (if (null? stack)
+      (error "The stack is empty")
+      car))
 
 (define (char->procedure c)
   (case c
