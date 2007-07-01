@@ -1,9 +1,15 @@
+;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 ;;;
 ;;; utilities.scm
 ;;;
 
+(define (char-digit? c)
+  (if (r5rs:char-digit? c)
+      (char->digit c)
+      #f))
+
 (define (char->digit c)
-  (if (char-digit? c)
+  (if (r5rs:char-digit? c)
       (- (char->integer c) (char->integer #\0))
       (error c "This is not a digit")))
 
@@ -49,3 +55,8 @@
     ((#\>) >)
     ((#\<) <)
     (else (error c "This is not recognized."))))
+
+(define (member? atom list)
+  (cond ((null? list) #f)
+        ((eq? atom (car list)) #t)
+        (else (member? atom (cdr list)))))
