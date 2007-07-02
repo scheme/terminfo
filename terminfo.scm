@@ -95,25 +95,26 @@
 (define (tputs s . args)
   (let-optionals args ((lines-affected 1)
                        (output-port (current-output-port)))
-    (let loop ((i 0)
-               (len (string-length s)))
-      (if (< i len)
-          (case (string-ref s i)
-            ((#\$)
-             (let* ((substr (substring s i (1+ (string-index s #\>))))
-                    (time
-                     forced (read-padding substr lines-affected))
-                    (rate   (baud-rate output-port)))
-               (if (or force (eq? #t (xon-xoff)))
-                   (if (eq? #t (no-pad-char))
-                       (sleep (/ time 10000.0))
-                       (do ((i 0 (+ i 1))) ((>= i (ceiling (/ (* rate time) 100000))))
-                         (write-char (char-padding) output-port)
-                         (loop (1+ i) len)))
-                   (loop (1+ i) len))))
-            (else => (lambda (x)
-                       (write-char x)
-                       (loop (1+ i) len))))))))
+    (with-current-output-port output-port
+        (let loop ((i 0)
+                   (len (string-length s)))
+          (if (< i len)
+              (case (string-ref s i)
+                ((#\$)
+                 (let* ((substr (substring s i (1+ (string-index s #\>))))
+                        (time
+                         forced (read-padding substr lines-affected))
+                        (rate   (baud-rate output-port)))
+                   (if (or force (eq? #t (xon-xoff)))
+                       (if (eq? #t (no-pad-char))
+                           (sleep (/ time 10000.0))
+                           (do ((i 0 (+ i 1))) ((>= i (ceiling (/ (* rate time) 100000))))
+                             (write-char (char-padding))
+                             (loop (1+ i) len)))
+                       (loop (1+ i) len))))
+                (else => (lambda (c)
+                           (write-char c)
+                           (loop (1+ i) len)))))))))
 
 ;;;
 ;;; See Table 7.3, _Unix_Curses_Explained_, p.101
@@ -162,7 +163,7 @@
           ((#\c) ; %c -> print pop() like %c in printf
            (let* ((v   (pop stack))
                   (val (if (number? v) (ascii->char v) v)))
-             (write-char val)
+             (display val)
              (values (1+ i) (cdr stack) svars dvars)))
 
           ((#\s) ; %s -> print pop() like %s in printf
@@ -189,8 +190,9 @@
              (values (+ 2 i) (push val stack) svars dvars)))
 
           ((#\') ; %'c' -> push char constant c
-           (let ((c (string-ref s (1+ i))))
-             (values (+ 3 i) (push c stack) svars dvars)))
+           (let ((c   (string-ref s (1+ i)))
+                 (end (string-index s #\' (1+ i))))
+             (values (1+ end) (push c stack) svars dvars)))
 
           ((#\{) ; %{nn} -> push integer constant nn
            (let* ((end (string-index s #\} i))
@@ -199,8 +201,13 @@
              (values (1+ end) (push nn stack) svars dvars)))
 
           ((#\l) ; %l -> push strlen (pop)
-           (let ((val (digit->char (string-length (pop stack)))))
-             (values (1+ i) (push val (cdr stack)) svars dvars)))
+           (let* ((val (pop stack)))
+             (if (string? val)
+                 (values
+                  (1+ i)
+                  (push (number->string (string-length val)) (cdr stack))
+                  svars dvars)
+                 (error "The value on the stack is not a string: " val))))
 
           ; %op -> push (pop() op pop())
           ((#\+ #\- #\* #\/ #\m #\& #\| #\^ #\= #\> #\<)
@@ -244,7 +251,7 @@
   (define (->number x)
     (cond ((char? x) (char->ascii x))
           ((number? x) x)
-          (else (error x "This is invalid."))))
+          (else (error x "Cannot convert to number."))))
   (define (->string v base)
     (cond ((zero? base) v)
           ((negative? base)
@@ -311,8 +318,8 @@
                              dvars (write-param-capability
                                     s (1+ i) stack svars dvars params)))
                        (loop i stack svars dvars len)))
-              (else => (lambda (x)
-                         (write-char x)
+              (else => (lambda (c)
+                         (write-char c)
                          (loop (1+ i) stack svars dvars len))))))))
 
 (define (load-terminfo name)
