@@ -17,7 +17,7 @@
   (numbers  terminal:numbers)
   (strings  terminal:strings))
 
-(define (terminfo-filename name)
+(define (open-terminfo-file name)
   (let loop ((dirs *terminfo-directories*))
     (if (not (null? dirs))
         (let* ((basedir (car dirs))
@@ -25,9 +25,7 @@
                (file    (path-list->file-name (list basedir initial name))))
           (cond ((file-not-exists? file)
                  (error "Cannot find terminfo named " name))
-                ; TODO: returns only the relative path
-                ((file-symlink? file) (read-symlink file))
-                ((file-readable? file) file)
+                ((file-readable? file) (open-input-file file))
                 (else (loop (cdr dirs))))))))
 
 (define (read-byte . args)
@@ -312,19 +310,16 @@
               ((#\^)
                (write-control-character (string-ref s (1+ i)))
                (loop (1+ i) stack svars dvars len))
-              ((#\%) (let* ((i
-                             stack
-                             svars
-                             dvars (write-param-capability
+              ((#\%) (let* ((i stack svars dvars
+                               (write-param-capability
                                     s (1+ i) stack svars dvars params)))
                        (loop i stack svars dvars len)))
               (else => (lambda (c)
                          (write-char c)
                          (loop (1+ i) stack svars dvars len))))))))
 
-(define (load-terminfo name)
-  (with-input-from-file name
-    (lambda ()
+(define (load-terminfo port)
+  (with-current-input-port port
       (let* ((magic         (read-short))
              (sznames       (read-short))
              (szbooleans    (read-short))
@@ -337,7 +332,7 @@
              (strings       (make-vector szstrings -1))
              (stringtable   (make-string szstringtable)))
         (if (not (= magic #o432))
-            (error name "This is not well-formed"))
+            (error "This is not well-formed"))
         (do ((i 0 (+ i 1))) ((>= i szbooleans))
           (vector-set! booleans i (not (zero? (read-byte)))))
         (if (odd? (+ sznames szbooleans))
@@ -355,10 +350,10 @@
                                            start szstringtable))
                      (substr (substring stringtable start end)))
                 (vector-set! strings i substr))))
-        (make-terminal names booleans numbers strings)))))
+        (make-terminal names booleans numbers strings))))
 
 (define (setup-terminal . args)
   (let-optionals args ((term (getenv "TERM")))
-    (let ((filename (terminfo-filename term)))
-      (set! *current-terminal* (load-terminfo filename))
+    (let ((file (open-terminfo-file term)))
+      (set! *current-terminal* (load-terminfo file))
       *current-terminal*)))
