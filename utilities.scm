@@ -13,15 +13,6 @@
       (- (char->integer c) (char->integer #\0))
       (error c "This is not a digit")))
 
-(define (digit->char c)
-  (cond
-   ((not (number? c))
-    (error c "This is not a number"))
-   ((or (zero? c)
-        (and (positive? c) (< c 10)))
-    (ascii->char (+ c (char->ascii #\0))))
-   (else (error c "This is not a digit"))))
-
 (define (letter->number c)
   (if (char-alphabetic? c)
       (1+ (- (char->ascii (char-upcase c)) (char->ascii #\A)))
@@ -33,16 +24,16 @@
       (error n "This is not between 1 and 26")
       (ascii->char (+ ))))
 
-(define (1+ digit)
-  (if (number? digit)
-      (+ 1 digit)
-      (error digit "This is not a number")))
+(define (1+ n)
+  (if (number? n)
+      (+ 1 n)
+      (error n "This is not a number")))
 
 (define push cons)
 (define (pop stack)
   (if (null? stack)
       (error "The stack is empty")
-      car))
+      (car stack)))
 
 (define (char->procedure c)
   (case c
