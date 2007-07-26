@@ -156,47 +156,47 @@
         (case (string-ref s i)
           ((#\%) ; %% -> outputs `%'
            (write-char #\%)
-           (values (1+ i) stack svars dvars))
+           (values (1+ i) stack svars dvars params))
 
           ((#\c) ; %c -> print pop() like %c in printf
            (let* ((v   (pop stack))
                   (val (if (number? v) (ascii->char v) v)))
              (display val)
-             (values (1+ i) (cdr stack) svars dvars)))
+             (values (1+ i) (cdr stack) svars dvars params)))
 
           ((#\s) ; %s -> print pop() like %s in printf
            (display (pop stack))
-           (values (1+ i) (cdr stack) svars dvars))
+           (values (1+ i) (cdr stack) svars dvars params))
 
           ((#\p) ; %p[1-9] -> push i-th parameter
            (let* ((idx   (char->digit (string-ref s (1+ i))))
                   (param (list-ref params (- 1 idx))))
-             (values (+ 2 i) (push param stack) svars dvars)))
+             (values (+ 2 i) (push param stack) svars dvars params)))
 
           ((#\P) ; %P[a-z] -> set variable [a-z] to pop()
            (let* ((c   (string-ref s (1+ i)))
                   (idx (letter->number c))
                   (var (if (char-upper-case? c) svars dvars)))
              (vector-set! var idx (pop stack))
-             (values (+ 2 i) (cdr stack) svars dvars)))
+             (values (+ 2 i) (cdr stack) svars dvars params)))
 
           ((#\g) ; %g[a-z] -> get variable [a-z] and push it
            (let* ((c   (string-ref s (1+ i)))
                   (idx (letter->number c))
                   (var (if (char-upper-case? c) svars dvars))
                   (val (vector-ref var idx)))
-             (values (+ 2 i) (push val stack) svars dvars)))
+             (values (+ 2 i) (push val stack) svars dvars params)))
 
           ((#\') ; %'c' -> push char constant c
            (let ((c   (string-ref s (1+ i)))
                  (end (string-index s #\' (1+ i))))
-             (values (1+ end) (push c stack) svars dvars)))
+             (values (1+ end) (push c stack) svars dvars params)))
 
           ((#\{) ; %{nn} -> push integer constant nn
            (let* ((end (string-index s #\} i))
                   (str (substring s (1+ i) end))
                   (nn  (string->number str)))
-             (values (1+ end) (push nn stack) svars dvars)))
+             (values (1+ end) (push nn stack) svars dvars params)))
 
           ((#\l) ; %l -> push strlen (pop)
            (let* ((val (pop stack)))
@@ -204,7 +204,7 @@
                  (values
                   (1+ i)
                   (push (number->string (string-length val)) (cdr stack))
-                  svars dvars)
+                  svars dvars params)
                  (error "The value on the stack is not a string: " val))))
 
           ; %op -> push (pop() op pop())
@@ -217,7 +217,7 @@
                  (values
                   (1+ i)
                   (push (op (first stack) (second stack)) (cddr stack))
-                  svars dvars))))
+                  svars dvars params))))
           ; %i   add 1 to first two parameters (for ANSI terminals)
           ((#\i)
            (let ((incr (lambda (v)
@@ -255,7 +255,8 @@
        ((and (member? #\+ flags) (member? #\# flags))
         (string-append sign prefix))
        ((member? #\+ flags) sign)
-       ((member? #\# flags) prefix))))
+       ((member? #\# flags) prefix)
+       (else ""))))
   (define (pad s func width precision)
     (if (zero? width) s (func s width)))
   (define (padding-function flags width precision)
@@ -279,12 +280,12 @@
         (letrec
             ((print
               (lambda (base flags width precision)
-                (let* ((value  (pop stack))
-                       (nvalue (->number value))
-                       (pad    (padding-function flags width precision))
-                       (prefix (prefix flags nvalue base))
-                       (svalue (pad (string-append
-                                     prefix (->string nvalue base)))))
+                (let* ((value   (pop stack))
+                       (nvalue  (->number value))
+                       (pad     (padding-function flags width precision))
+                       (sprefix (prefix flags nvalue base))
+                       (svalue  (pad (string-append
+                                     sprefix (->string nvalue base)))))
                   (display svalue))))
              (loop
               (lambda (i flags width precision saw-dot?)
@@ -307,7 +308,7 @@
                          ((char-specifier? c) =>
                           (lambda (base)
                             (print base flags width precision)
-                            (values (1+ i) (cdr stack) svars dvars)))
+                            (values (1+ i) (cdr stack) svars dvars params)))
                          (else (error c "This is not recognized."))))
                       (error "Missing format specifier [dosxX]"))))))
           (loop i '() 0 0 #f)))))
@@ -328,9 +329,9 @@
               ((#\^)
                (write-control-character (string-ref s (1+ i)))
                (loop (1+ i) stack svars dvars len))
-              ((#\%) (let* ((i stack svars dvars
+              ((#\%) (let* ((i stack svars dvars params
                                (write-param-capability
-                                    s (1+ i) stack svars dvars params)))
+                                    s (1+ i) stack svars dvars (car params))))
                        (loop i stack svars dvars len)))
               (else => (lambda (c)
                          (write-char c)
