@@ -31,7 +31,7 @@
             (define (name . args)
               (let ((value (terminal:capability *current-terminal* 'name)))
                 (if (and (number? value) (negative? value))
-                    (error 'name "This capability is undefined.")
+                    (case 'type ((boolean) #f) ((integer) 0) ((string) ""))
                     (if (eq? 'type 'string)
                         (tparm value args)
                         value))))))))
