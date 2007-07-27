@@ -512,59 +512,9 @@
 
 (define-structure terminfo terminfo-interface
   (open
-   srfi-1 srfi-6 srfi-9 srfi-13 srfi-71 srfi-87
+   srfi-1 srfi-6 srfi-9 srfi-11 srfi-13
    (modify scheme-with-scsh (rename (char-digit? r5rs:char-digit?)))
    i/o let-opt tables threads)
   (files terminfo
          terminfo-capabilities
          utilities))
-
-; SRFI 71: Extended LET-syntax for multiple values
-
-(define-interface srfi-71-interface
-  (export ((let let* letrec) :syntax)
-          ((values->list values->vector) :syntax)
-          uncons
-          uncons-2
-          uncons-3
-          uncons-4
-          uncons-cons
-          unlist
-          unvector))
-
-(define-structure srfi-71*
-  (export ((srfi-let srfi-let* srfi-letrec) :syntax)
-          ((values->list values->vector) :syntax)
-          uncons
-          uncons-2
-          uncons-3
-          uncons-4
-          uncons-cons
-          unlist
-          unvector)
-  (open (modify scheme
-                (rename (let r5rs-let)
-                        (let* r5rs-let*)
-                        (letrec r5rs-letrec))))
-  (files srfi-71))
-
-(define-structure srfi-71 srfi-71-interface
-  (open (modify srfi-71*
-                (rename (srfi-let let)
-                        (srfi-let* let*)
-                        (srfi-letrec letrec)))))
-
-;;; SRFI 87: => in case clauses
-
-(define-interface srfi-87-interface
-  (export ((case) :syntax)))
-
-(define-structure srfi-87*
-    (export ((srfi-case) :syntax))
-  (open (modify scheme
-                (rename (case r5rs-case))))
-    (files srfi-87))
-
-(define-structure srfi-87 srfi-87-interface
-  (open (modify srfi-87*
-                (rename (srfi-case case)))))
