@@ -336,7 +336,8 @@
                               (write-param-capability
                                 s (1+ i) stack svars dvars (car params))))
                         (loop i stack svars dvars len)))
-               (else (write-char c))))))))
+               (else (write-char c)
+                     (loop (1+ i) stack svars dvars len))))))))
 
 (define (load-terminfo port)
   (with-current-input-port port
