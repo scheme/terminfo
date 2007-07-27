@@ -332,8 +332,8 @@
                 (write-control-character (string-ref s (1+ i)))
                 (loop (1+ i) stack svars dvars len))
                ((#\%)
-                (let*-values (((i stack svars dvars params)
-                               (write-param-capability
+                (let-values (((i stack svars dvars params)
+                              (write-param-capability
                                 s (1+ i) stack svars dvars (car params))))
                         (loop i stack svars dvars len)))
                (else (write-char c))))))))
