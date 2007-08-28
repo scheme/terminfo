@@ -98,8 +98,8 @@
                    (len (string-length s)))
           (if (< i len)
               (let ((c  (string-ref s i)))
-                (case c
-                 ((#\$)
+                (cond
+                 ((and (char=? c #\$) (number? (string-index s #\>)))
                   (let ((substr (substring s i (1+ (string-index s #\>))))
                         (rate   (baud-rate output-port)))
                     (let-values (((time force)
