@@ -513,7 +513,11 @@
 (define-structure terminfo terminfo-interface
   (open
    srfi-1 srfi-6 srfi-9 srfi-11 srfi-13
-   (modify scheme-with-scsh (rename (char-digit? r5rs:char-digit?)))
+   scheme
+   (modify char-predicates-lib (rename (char-digit? r5rs:char-digit?)))
+   error-package
+   field-reader-package
+   scsh-level-0
    i/o let-opt tables threads)
   (files terminfo
          terminfo-capabilities
