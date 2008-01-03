@@ -17,11 +17,18 @@
   (numbers  terminal:numbers)
   (strings  terminal:strings))
 
+(define (terminfo-directory-prefix name)
+  (let ((os-name (uname:os-name (uname)))
+	(prefix  (string-take name 1)))
+    (cond
+     ((string=? os-name "Darwin") (char->ascii prefix))
+     (else prefix))))
+
 (define (open-terminfo-file name)
   (let loop ((dirs *terminfo-directories*))
     (if (not (null? dirs))
         (let* ((basedir (car dirs))
-               (initial (string-take name 1))
+               (initial (terminfo-directory-prefix name))
                (file    (path-list->file-name (list basedir initial name))))
           (cond ((file-not-exists? file)
                  (error "Cannot find terminfo named " name))
