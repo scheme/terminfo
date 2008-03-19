@@ -5,7 +5,7 @@
 ;;; ,open terminfo
 ;;;
 
-(define text "This is UunderlinedU.\nThis is BboldB.\n")
+(define text "This is UunderlinedU. #This is BboldB.#")
 (define underlined? #f)
 (define bold? #f)
 
@@ -28,5 +28,6 @@
    (cond
     ((char=? #\U c) (toggle 'underline))
     ((char=? #\B c) (toggle 'bold))
+    ((char=? #\# c) (newline))
     (else (display c))))
  text)
