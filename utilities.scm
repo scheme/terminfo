@@ -4,12 +4,12 @@
 ;;;
 
 (define (char-digit? c)
-  (if (r5rs:char-digit? c)
+  (if (char-set-contains? c char-set:digit)
       (char->digit c)
       #f))
 
 (define (char->digit c)
-  (if (r5rs:char-digit? c)
+  (if (char-set-contains? c char-set:digit)
       (- (char->integer c) (char->integer #\0))
       (error c "This is not a digit")))
 
