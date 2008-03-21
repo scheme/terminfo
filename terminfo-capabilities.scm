@@ -18,23 +18,49 @@
           -1
           (vector-ref table index)))))
 
+(define (*define-capability name type index)
+  (table-set! *capabilities*
+              name
+              (cons type index)))
+
 (define-syntax define-capability
   (syntax-rules ()
     ((_ name type index)
-     (begin (table-set! *capabilities*
-                        'name
-                        (cons (case 'type
-                                ((boolean) terminal:booleans)
-                                ((integer) terminal:numbers)
-                                ((string)  terminal:strings))
-                              index))
-            (define (name . args)
-              (let ((value (terminal:capability *current-terminal* 'name)))
-                (if (and (number? value) (negative? value))
-                    (case 'type ((boolean) #f) ((integer) 0) ((string) ""))
-                    (if (eq? 'type 'string)
-                        (tparm value args)
-                        value))))))))
+     (begin (*define-capability 'name (capability-type type) index)
+            (define name ((capability-accessor type) 'name))))))
+
+(define-syntax capability-type
+  (syntax-rules (boolean integer string)
+    ((capability-type boolean) terminal:booleans)
+    ((capability-type integer) terminal:numbers)
+    ((capability-type string) terminal:strings)))
+
+(define-syntax capability-accessor
+  (syntax-rules (boolean integer string)
+    ((capability-accessor boolean) boolean-capability-accessor)
+    ((capability-accessor integer) integer-capability-accessor)
+    ((capability-accessor string) string-capability-accessor)))
+
+(define (boolean-capability-accessor name)
+  (lambda ()
+    (let ((value (terminal:capability *current-terminal* name)))
+      (if (and (number? value) (negative? value))
+          #f
+          value))))
+
+(define (integer-capability-accessor name)
+  (lambda ()
+    (let ((value (terminal:capability *current-terminal* name)))
+      (if (and (number? value) (negative? value))
+          0
+          value))))
+
+(define (string-capability-accessor name)
+  (lambda args
+    (let ((value (terminal:capability *current-terminal* name)))
+      (if (and (number? value) (negative? value))
+          ""
+          (tparm value args)))))
 
 (define-capability auto-left-margin boolean 0)
 (define-capability auto-right-margin boolean 1)
