@@ -21,7 +21,10 @@
   (let ((os-name (uname:os-name (uname)))
 	(prefix  (string-take name 1)))
     (cond
-     ((string=? os-name "Darwin") (char->ascii prefix))
+     ((string=? os-name "Darwin")
+      (string-pad (number->string (char->ascii (string-ref prefix 0)) #x10)
+                  2
+                  #\0))
      (else prefix))))
 
 (define (open-terminfo-file name)
