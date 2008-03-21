@@ -69,8 +69,8 @@
                 (+ 2 j)))
        ((not (char-digit? char))
         (values (string->number (substring s i j))
-                (1+ j)))
-       (else (loop (1+ j)))))))
+                (+ 1 j)))
+       (else (loop (+ 1 j)))))))
 
 (define (read-padding s lines)
   (if (not (and (char=? #\$ (string-ref s 0))
@@ -81,8 +81,8 @@
              (i     2))
     (case (string-ref s i)
       ((#\>) (values time force))
-      ((#\*) (loop (* time lines) force (1+ i)))
-      ((#\/) (loop time           #t    (1+ i)))
+      ((#\*) (loop (* time lines) force (+ 1 i)))
+      ((#\/) (loop time           #t    (+ 1 i)))
       (else
        (if (not (zero? time))
            (error s "This is not well-formed.")
@@ -107,7 +107,7 @@
               (let ((c  (string-ref s i)))
                 (cond
                  ((and (char=? c #\$) (number? (string-index s #\>)))
-                  (let ((substr (substring s i (1+ (string-index s #\>))))
+                  (let ((substr (substring s i (+ 1 (string-index s #\>))))
                         (rate   (baud-rate output-port)))
                     (let-values (((time force)
                                   (read-padding substr lines-affected)))
@@ -117,11 +117,11 @@
                               (do ((i 0 (+ i 1)))
                                   ((>= i (ceiling (/ (* rate time) 100000))))
                                 (write-char (char-padding))
-                                (loop (1+ i) len)))
-                          (loop (1+ i) len)))))
+                                (loop (+ 1 i) len)))
+                          (loop (+ 1 i) len)))))
                  (else (begin
                          (write-char c)
-                         (loop (1+ i) len))))))))))
+                         (loop (+ 1 i) len))))))))))
 
 ;;;
 ;;; See Table 7.3, _Unix_Curses_Explained_, p.101
@@ -165,53 +165,53 @@
         (case (string-ref s i)
           ((#\%) ; %% -> outputs `%'
            (write-char #\%)
-           (values (1+ i) stack svars dvars params))
+           (values (+ 1 i) stack svars dvars params))
 
           ((#\c) ; %c -> print pop() like %c in printf
            (let* ((v   (pop stack))
                   (val (if (number? v) (ascii->char v) v)))
              (display val)
-             (values (1+ i) (cdr stack) svars dvars params)))
+             (values (+ 1 i) (cdr stack) svars dvars params)))
 
           ((#\s) ; %s -> print pop() like %s in printf
            (display (pop stack))
-           (values (1+ i) (cdr stack) svars dvars params))
+           (values (+ 1 i) (cdr stack) svars dvars params))
 
           ((#\p) ; %p[1-9] -> push i-th parameter
-           (let* ((idx   (char->digit (string-ref s (1+ i))))
+           (let* ((idx   (char->digit (string-ref s (+ 1 i))))
                   (param (list-ref params (- 1 idx))))
              (values (+ 2 i) (push param stack) svars dvars params)))
 
           ((#\P) ; %P[a-z] -> set variable [a-z] to pop()
-           (let* ((c   (string-ref s (1+ i)))
+           (let* ((c   (string-ref s (+ 1 i)))
                   (idx (letter->number c))
                   (var (if (char-upper-case? c) svars dvars)))
              (vector-set! var idx (pop stack))
              (values (+ 2 i) (cdr stack) svars dvars params)))
 
           ((#\g) ; %g[a-z] -> get variable [a-z] and push it
-           (let* ((c   (string-ref s (1+ i)))
+           (let* ((c   (string-ref s (+ 1 i)))
                   (idx (letter->number c))
                   (var (if (char-upper-case? c) svars dvars))
                   (val (vector-ref var idx)))
              (values (+ 2 i) (push val stack) svars dvars params)))
 
           ((#\') ; %'c' -> push char constant c
-           (let ((c   (string-ref s (1+ i)))
-                 (end (string-index s #\' (1+ i))))
-             (values (1+ end) (push c stack) svars dvars params)))
+           (let ((c   (string-ref s (+ 1 i)))
+                 (end (string-index s #\' (+ 1 i))))
+             (values (+ 1 end) (push c stack) svars dvars params)))
 
           ((#\{) ; %{nn} -> push integer constant nn
            (let* ((end (string-index s #\} i))
-                  (str (substring s (1+ i) end))
+                  (str (substring s (+ 1 i) end))
                   (nn  (string->number str)))
-             (values (1+ end) (push nn stack) svars dvars params)))
+             (values (+ 1 end) (push nn stack) svars dvars params)))
 
           ((#\l) ; %l -> push strlen (pop)
            (let* ((val (pop stack)))
              (if (string? val)
                  (values
-                  (1+ i)
+                  (+ 1 i)
                   (push (number->string (string-length val)) (cdr stack))
                   svars dvars params)
                  (error "The value on the stack is not a string: " val))))
@@ -224,7 +224,7 @@
              (if (< len 2)
                  (error "There are insufficient values on the stack.")
                  (values
-                  (1+ i)
+                  (+ 1 i)
                   (push (op (first stack) (second stack)) (cddr stack))
                   svars dvars params))))
           ;; %i   add 1 to first two parameters (for ANSI terminals)
@@ -233,13 +233,13 @@
                          (cond
                           ((null? v) v)
                           ((null? (cdr v))
-                           (cons (1+ (first v))
+                           (cons (+ 1 (first v))
                                  (cdr v)))
                           (else
-                           (cons (1+ (first v))
-                                 (cons (1+ (second v))
+                           (cons (+ 1 (first v))
+                                 (cons (+ 1 (second v))
                                        (cddr v))))))))
-             (values (1+ i) stack svars dvars (incr params))))
+             (values (+ 1 i) stack svars dvars (incr params))))
 
           ;; %[[:]flags][width[.precision]][doxXs]
           ;;  as in printf, flags are [-+#] and space
@@ -303,21 +303,21 @@
                       (let ((c (string-ref s i)))
                         (cond
                          ((char=? c #\:)
-                          (loop (1+ i) flags width precision saw-dot?))
+                          (loop (+ 1 i) flags width precision saw-dot?))
                          ((char-flag? c)
-                          (loop (1+ i) (cons c flags) width precision saw-dot?))
+                          (loop (+ 1 i) (cons c flags) width precision saw-dot?))
                          ((char=? c #\.)
-                          (loop (1+ i) flags width precision #t))
+                          (loop (+ 1 i) flags width precision #t))
                          ((char-digit? c) =>
                           (lambda (x)
-                            (loop (1+ i) flags
+                            (loop (+ 1 i) flags
                                   (if saw-dot? width (incr width x))
                                   (if saw-dot? (incr precision x) precision)
                                   saw-dot?)))
                          ((char-specifier? c) =>
                           (lambda (base)
                             (print base flags width precision)
-                            (values (1+ i) (cdr stack) svars dvars params)))
+                            (values (+ 1 i) (cdr stack) svars dvars params)))
                          (else (error c "This is not recognized."))))
                       (error "Missing format specifier [dosxX]"))))))
           (loop i '() 0 0 #f)))))
@@ -334,18 +334,18 @@
             (let ((c (string-ref s i)))
               (case c
                 ((#\\)
-                 (write-escaped-character (string-ref s (1+ i)))
-                 (loop (1+ i) stack svars dvars len))
+                 (write-escaped-character (string-ref s (+ 1 i)))
+                 (loop (+ 1 i) stack svars dvars len))
                 ((#\^)
-                 (write-control-character (string-ref s (1+ i)))
-                 (loop (1+ i) stack svars dvars len))
+                 (write-control-character (string-ref s (+ 1 i)))
+                 (loop (+ 1 i) stack svars dvars len))
                 ((#\%)
                  (let-values (((i stack svars dvars params)
                                (write-param-capability
-                                s (1+ i) stack svars dvars (car params))))
+                                s (+ 1 i) stack svars dvars (car params))))
                    (loop i stack svars dvars len)))
                 (else (write-char c)
-                      (loop (1+ i) stack svars dvars len))))))))
+                      (loop (+ 1 i) stack svars dvars len))))))))
 
 (define (load-terminfo port)
   (with-current-input-port port

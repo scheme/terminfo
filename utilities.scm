@@ -15,24 +15,14 @@
 
 (define (letter->number c)
   (if (char-alphabetic? c)
-      (1+ (- (char->ascii (char-upcase c)) (char->ascii #\A)))
+      (+ 1 (- (char->ascii (char-upcase c)) (char->ascii #\A)))
       (error c "This is not a letter")))
 
 (define (number->letter n)
   (if (or (negative? n)
           (> n 26))
       (error n "This is not between 1 and 26")
-      (ascii->char (+ (1- n) (char->ascii #\a)))))
-
-(define (1+ n)
-  (if (number? n)
-      (+ 1 n)
-      (error n "This is not a number")))
-
-(define (1- n)
-  (if (number? n)
-      (- 1 n)
-      (error n "This is not a number")))
+      (ascii->char (+ (- n 1) (char->ascii #\a)))))
 
 (define push cons)
 (define (pop stack)

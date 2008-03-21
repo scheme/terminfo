@@ -2,7 +2,7 @@
 ;;;
 ;;; Based on: http://uw713doc.sco.com/en/SDK_charm/_An_Example_terminfo_Program.html
 ;;;
-;;; ,open terminfo
+;;; ,open terminfo srfi-13
 ;;;
 
 (define text "This is UunderlinedU. #This is BboldB.#")
