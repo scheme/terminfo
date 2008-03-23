@@ -33,13 +33,13 @@
   (syntax-rules (boolean integer string)
     ((capability-type boolean) terminal:booleans)
     ((capability-type integer) terminal:numbers)
-    ((capability-type string) terminal:strings)))
+    ((capability-type string)  terminal:strings)))
 
 (define-syntax capability-accessor
   (syntax-rules (boolean integer string)
     ((capability-accessor boolean) boolean-capability-accessor)
     ((capability-accessor integer) integer-capability-accessor)
-    ((capability-accessor string) string-capability-accessor)))
+    ((capability-accessor string)  string-capability-accessor)))
 
 (define (boolean-capability-accessor name)
   (lambda ()
