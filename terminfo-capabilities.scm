@@ -59,7 +59,7 @@
   (lambda args
     (let ((value (terminal:capability *current-terminal* name)))
       (if (and (number? value) (negative? value))
-          ""
+          #f
           (tparm value args)))))
 
 (define-capability auto-left-margin boolean 0)
