@@ -19,12 +19,10 @@
 
 (define (terminfo-directory-prefix name)
   (let ((os-name (uname:os-name (uname)))
-	(prefix  (string-take name 1)))
+	(prefix  (string-ref name 0)))
     (cond
      ((string=? os-name "Darwin")
-      (string-pad (number->string (char->ascii (string-ref prefix 0)) #x10)
-                  2
-                  #\0))
+      (string-pad (number->string (char->ascii prefix) #x10) 2 #\0))
      (else prefix))))
 
 (define (open-terminfo-file name)
