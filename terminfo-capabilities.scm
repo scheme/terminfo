@@ -1,11 +1,11 @@
 ;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 ;;;
 
-(define *capabilities* (make-table))
+(define *capabilities* (make-hash-table))
 
 ;;; see tigetflag, tigetnum, tigetstr
 (define (terminal:capability terminal name)
-  (let ((capability (table-ref *capabilities* name)))
+  (let ((capability (hash-table-ref *capabilities* name)))
     (if (or (null? terminal)
             (not (terminal? terminal)))
         (error "Invalid terminfo object"))
@@ -19,9 +19,9 @@
           (vector-ref table index)))))
 
 (define (*define-capability name type index)
-  (table-set! *capabilities*
-              name
-              (cons type index)))
+  (hash-table-set! *capabilities*
+                   name
+                   (cons type index)))
 
 (define-syntax define-capability
   (syntax-rules ()

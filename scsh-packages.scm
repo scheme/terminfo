@@ -9,7 +9,11 @@
    error-package
    field-reader-package
    scsh-level-0
-   i/o let-opt tables threads)
+   i/o let-opt
+   (modify tables (rename (make-table make-hash-table)
+                          (table-ref  hash-table-ref)
+                          (table-set! hash-table-set!)))
+   threads)
   (files terminfo
          terminfo-capabilities
          utilities))

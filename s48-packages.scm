@@ -9,12 +9,19 @@
         (modify scheme (hide integer->char char->integer))
         signals
         support
-        tables
         threads
-        srfi-1 srfi-6 srfi-9 srfi-11 srfi-13 srfi-14)
+        srfi-1 srfi-6 srfi-9 srfi-11 srfi-13 srfi-14 srfi-69)
   (files terminfo
          terminfo-capabilities
          utilities))
+
+(define-structure srfi-69 (export make-hash-table
+                                  hash-table-ref
+                                  hash-table-set!)
+  (open scheme
+        (modify tables (rename (make-table make-hash-table)
+                               (table-ref  hash-table-ref)
+                               (table-set! hash-table-set!)))))
 
 (define-structure support (export path-list->file-name
                                   infix-splitter
