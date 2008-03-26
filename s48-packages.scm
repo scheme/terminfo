@@ -3,17 +3,19 @@
 (define-structure terminfo terminfo-interface
   (open (modify ascii (rename (ascii->char integer->char)
                               (char->ascii char->integer)))
-        bitwise
-        i/o
         let-opt
         (modify scheme (hide integer->char char->integer))
-        signals
         support
-        threads
-        srfi-1 srfi-6 srfi-9 srfi-11 srfi-13 srfi-14 srfi-69)
+        (subset threads (sleep))
+        srfi-1 srfi-6 srfi-9 srfi-11 srfi-13 srfi-14 srfi-23 srfi-60 srfi-69)
   (files terminfo
          terminfo-capabilities
          utilities))
+
+(define-structure srfi-60 (export bitwise-and
+                                  bitwise-ior
+                                  bitwise-xor)
+  (open scheme bitwise))
 
 (define-structure srfi-69 (export make-hash-table
                                   hash-table-ref
