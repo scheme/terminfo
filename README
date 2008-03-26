@@ -1,0 +1,23 @@
+ Terminfo library
+==================
+
+This is a Scheme library for accessing the terminfo database on Unix/Linux
+systems. It's based on terminfo.lisp written by Paul Foley
+(http://users.actrix.co.nz/mycroft/cl.html).
+
+This library has been tested on Scheme48 1.3 as well as Scsh 0.6.7.
+
+To load in Scheme48 1.3,
+
+> ,config ,load interfaces.scm s48-let-opt.scm s48-packages.scm
+> ,open terminfo
+
+To load in Scsh 0.6.7,
+
+> ,config ,load interfaces.scm scsh-packages.scm
+> ,open terminfo
+
+A sample test program is available at 'tests/termhl.scm'.
+
+> ,open terminfo srfi-13
+> ,load tests/termhl.scm
