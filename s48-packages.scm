@@ -52,7 +52,8 @@
 
     (define (infix-splitter delimiter)
       (lambda (input-string)
-        (string-tokenize input-string (string->char-set delimiter))))
+        (string-tokenize input-string
+                         (char-set-complement (string->char-set delimiter)))))
 
     (define (file-readable? filename)
       (accessible? filename (access-mode read)))
