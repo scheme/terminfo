@@ -36,13 +36,6 @@
                 ((file-readable? file) (open-input-file file))
                 (else (loop (cdr dirs))))))))
 
-(define (read-byte . args)
-  (let-optionals args ((s (current-input-port)))
-    (let ((value (read-char s)))
-      (if (eof-object? value)
-          (error "invalid data")
-          (char->integer value)))))
-
 (define (read-short . args)
   (let-optionals args ((s (current-input-port)))
     (let ((n (+ (read-byte s)
@@ -376,7 +369,8 @@
         (do ((i 0 (+ i 1))) ((>= i szstrings))
           (if (positive? (vector-ref strings i))
               (let* ((start  (vector-ref strings i))
-                     (end    (string-index stringtable (integer->char 0)
+                     (end    (string-index stringtable
+                                           (integer->char 0)
                                            start szstringtable))
                      (substr (substring stringtable start end)))
                 (vector-set! strings i substr))))

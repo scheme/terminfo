@@ -30,6 +30,7 @@
                                   file-readable?
                                   file-not-exists?
                                   getenv
+                                  read-byte
                                   tty-info tty-info:output-speed
                                   uname uname:os-name
                                   (with-current-input-port  :syntax)
@@ -60,6 +61,13 @@
 
     (define (file-not-exists? filename)
       (not (accessible? filename (access-mode exists))))
+
+    (define (read-byte . args)
+      (let-optionals args ((s (current-input-port)))
+        (let ((value (read-char s)))
+          (if (eof-object? value)
+              (error "invalid data")
+              (char->integer value)))))
 
     (define-syntax with-current-input-port
       (syntax-rules ()

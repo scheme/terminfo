@@ -14,6 +14,13 @@
                           (table-ref  hash-table-ref)
                           (table-set! hash-table-set!)))
    threads)
+  (begin
+    (define (read-byte . args)
+      (let-optionals args ((s (current-input-port)))
+        (let ((value (read-char s)))
+          (if (eof-object? value)
+              (error "invalid data")
+              (char->integer value))))) )
   (files terminfo
          terminfo-capabilities
          utilities))
