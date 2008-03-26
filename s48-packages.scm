@@ -1,11 +1,12 @@
 ;;; -*- Mode: Scheme; scheme48-package: (config) -*-
 
 (define-structure terminfo terminfo-interface
-  (open ascii
+  (open (modify ascii (rename (ascii->char integer->char)
+                              (char->ascii char->integer)))
         bitwise
         i/o
         let-opt
-        scheme
+        (modify scheme (hide integer->char char->integer))
         signals
         support
         tables
