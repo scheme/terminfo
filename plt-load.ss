@@ -43,20 +43,12 @@
 (define-syntax with-current-input-port
   (syntax-rules ()
     ((with-current-input-port port body ...)
-     (let ((old-port (current-input-port)))
-       (dynamic-wind
-         (lambda () (current-input-port port))
-         (lambda () body ...)
-         (lambda () (current-input-port old-port)))))))
+     (parameterize ((current-input-port port)) body ...))))
 
 (define-syntax with-current-output-port
   (syntax-rules ()
     ((with-current-output-port port body ...)
-     (let ((old-port (current-output-port)))
-       (dynamic-wind
-         (lambda () (current-output-port port))
-         (lambda () body ...)
-         (lambda () (current-output-port old-port)))))))
+     (parameterize ((current-output-port port)) body ...))))
 
 (load "terminfo.scm")
 (load "terminfo-capabilities.scm")
