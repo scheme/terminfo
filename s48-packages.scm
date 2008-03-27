@@ -35,7 +35,16 @@
                                   uname uname:os-name
                                   (with-current-input-port  :syntax)
                                   (with-current-output-port :syntax))
-  (open i/o-internal scheme posix srfi-13 srfi-14 util)
+  (open (modify ascii (rename (ascii->char integer->char)
+                              (char->ascii char->integer)))
+        i/o-internal
+        let-opt
+        (modify scheme (hide integer->char char->integer))
+        posix
+        (subset signals (error))
+        srfi-13
+        srfi-14
+        (subset util (unspecific)))
   (for-syntax (open scheme i/o-internal))
   (begin
     (define ignore (unspecific))
