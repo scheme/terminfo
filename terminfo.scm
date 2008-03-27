@@ -17,6 +17,18 @@
   (numbers  terminal:numbers)
   (strings  terminal:strings))
 
+(define (terminal:x-size . terminal)
+  (let ((size (getenv "LINES")))
+    (if (not size)
+        size
+        (string->number size))))
+
+(define (terminal:y-size . terminal)
+  (let ((size (getenv "LINES")))
+    (if (not size)
+        size
+        (string->number size))))
+
 (define (terminfo-directory-prefix name)
   (let ((os-name (uname:os-name (uname)))
 	(prefix  (string-ref name 0)))

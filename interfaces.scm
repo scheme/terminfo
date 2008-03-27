@@ -3,6 +3,7 @@
   (export *capabilities* *current-terminal* *terminfo-directories*
           setup-terminal
           terminal:capability terminal:names
+          terminal:x-size     terminal:y-size
           tparm tputs))
 
 (define-interface terminfo-capabilities-interface
