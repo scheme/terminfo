@@ -10,8 +10,9 @@
                                  "/usr/share/misc/terminfo"))
 
 (define-record-type terminal
-  (make-terminal names booleans numbers strings)
+  (make-terminal port names booleans numbers strings)
   terminal?
+  (port     terminal:port)
   (names    terminal:names)
   (booleans terminal:booleans)
   (numbers  terminal:numbers)
@@ -28,6 +29,9 @@
     (if (not size)
         (lines)
         (string->number size))))
+
+(define (terminal:baud-rate terminal)
+  (baud-rate (terminal:port terminal)))
 
 (define (terminfo-directory-prefix name)
   (let ((os-name (uname:os-name (uname)))
@@ -387,7 +391,7 @@
                                            start szstringtable))
                      (substr (substring stringtable start end)))
                 (vector-set! strings i substr))))
-        (make-terminal names booleans numbers strings))))
+        (make-terminal port names booleans numbers strings))))
 
 (define (setup-terminal . args)
   (let-optionals args ((term (getenv "TERM")))

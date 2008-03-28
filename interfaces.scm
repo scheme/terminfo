@@ -2,6 +2,7 @@
 (define-interface terminfo-core-interface
   (export *capabilities* *current-terminal* *terminfo-directories*
           setup-terminal
+          terminal:baud-rate  terminal:port
           terminal:capability terminal:names
           terminal:x-size     terminal:y-size
           tparm tputs))
