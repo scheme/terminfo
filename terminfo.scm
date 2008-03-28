@@ -20,13 +20,13 @@
 (define (terminal:x-size . terminal)
   (let ((size (getenv "COLUMNS")))
     (if (not size)
-        size
+        (columns)
         (string->number size))))
 
 (define (terminal:y-size . terminal)
   (let ((size (getenv "LINES")))
     (if (not size)
-        size
+        (lines)
         (string->number size))))
 
 (define (terminfo-directory-prefix name)
