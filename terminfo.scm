@@ -185,7 +185,7 @@
 
           ((#\p) ; %p[1-9] -> push i-th parameter
            (let* ((idx   (char->digit (string-ref s (+ 1 i))))
-                  (param (list-ref params (- 1 idx))))
+                  (param (list-ref params (- idx 1))))
              (values (+ 2 i) (push param stack) svars dvars params)))
 
           ((#\P) ; %P[a-z] -> set variable [a-z] to pop()
