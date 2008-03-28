@@ -41,26 +41,36 @@
     ((capability-accessor integer) integer-capability-accessor)
     ((capability-accessor string)  string-capability-accessor)))
 
+(define (find-terminal arguments)
+  (if (and (not (null? arguments))
+           (terminal? (take-right arguments 1)))
+      (values (take-right arguments 1)
+              (drop-right arguments 1))
+      (values *current-terminal* arguments)))
+
 (define (boolean-capability-accessor name)
-  (lambda ()
-    (let ((value (terminal:capability *current-terminal* name)))
-      (if (and (number? value) (negative? value))
-          #f
-          value))))
+  (lambda args
+    (let-values (((term args) (find-terminal args)))
+      (let ((value (terminal:capability term name)))
+        (if (and (number? value) (negative? value))
+            #f
+            value)))))
 
 (define (integer-capability-accessor name)
-  (lambda ()
-    (let ((value (terminal:capability *current-terminal* name)))
-      (if (and (number? value) (negative? value))
-          0
-          value))))
+  (lambda args
+    (let-values (((term args) (find-terminal args)))
+      (let ((value (terminal:capability term name)))
+        (if (and (number? value) (negative? value))
+            0
+            value)))))
 
 (define (string-capability-accessor name)
   (lambda args
-    (let ((value (terminal:capability *current-terminal* name)))
-      (if (and (number? value) (negative? value))
-          #f
-          (tparm value args)))))
+    (let-values (((term args) (find-terminal args)))
+      (let ((value (terminal:capability term name)))
+        (if (and (number? value) (negative? value))
+            #f
+            (tparm value args))))))
 
 (define-capability auto-left-margin boolean 0)
 (define-capability auto-right-margin boolean 1)
