@@ -18,7 +18,7 @@
   (strings  terminal:strings))
 
 (define (terminal:x-size . terminal)
-  (let ((size (getenv "LINES")))
+  (let ((size (getenv "COLUMNS")))
     (if (not size)
         size
         (string->number size))))
