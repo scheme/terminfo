@@ -43,8 +43,8 @@
 
 (define (find-terminal arguments)
   (if (and (not (null? arguments))
-           (terminal? (take-right arguments 1)))
-      (values (take-right arguments 1)
+           (terminal? (last arguments)))
+      (values (last arguments)
               (drop-right arguments 1))
       (values *current-terminal* arguments)))
 
