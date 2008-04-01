@@ -22,7 +22,7 @@
   (syntax-rules ()
     ((_ terminal name)
      (let ((value (terminal:capability terminal 'name)))
-       (and (number? value) (negative? value))))))
+       (not (and (number? value) (negative? value)))))))
 
 (define (*define-capability name type index)
   (hash-table-set! *capabilities*
