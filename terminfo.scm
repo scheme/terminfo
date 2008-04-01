@@ -9,6 +9,9 @@
 (define *terminfo-directories* '("/usr/share/terminfo"
                                  "/usr/share/misc/terminfo"))
 
+(define console-input-port     (current-input-port))
+(define console-output-port    (current-output-port))
+
 (define-record-type terminal
   (make-terminal port names booleans numbers strings)
   terminal?
@@ -394,7 +397,7 @@
                                            start szstringtable))
                      (substr (substring stringtable start end)))
                 (vector-set! strings i substr))))
-        (make-terminal port names booleans numbers strings))))
+        (make-terminal console-output-port names booleans numbers strings))))
 
 (define (setup-terminal . args)
   (let-optionals args ((term (getenv "TERM")))
