@@ -18,6 +18,12 @@
           -1
           (vector-ref table index)))))
 
+(define-syntax capability-available?
+  (syntax-rules ()
+    ((_ terminal name)
+     (let ((value (terminal:capability terminal 'name)))
+       (and (number? value) (negative? value))))))
+
 (define (*define-capability name type index)
   (hash-table-set! *capabilities*
                    name

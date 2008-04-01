@@ -1,6 +1,7 @@
 ;;; -*- Mode: Scheme; scheme48-package: terminfo -*-
 (define-interface terminfo-core-interface
-  (export *capabilities* *current-terminal* *terminfo-directories*
+  (export *current-terminal* *terminfo-directories*
+          *capabilities*     (capability-available? :syntax)
           setup-terminal
           console-input-port  console-output-port
           terminal:baud-rate  terminal:port
