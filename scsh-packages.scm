@@ -15,6 +15,20 @@
                           (table-set! hash-table-set!)))
    threads)
   (begin
+    (define-syntax unless
+      (syntax-rules ()
+        ((unless predicate action0 . actions)
+         (if predicate
+             #f
+             (begin action0 . actions)))))
+
+    (define-syntax when
+      (syntax-rules ()
+        ((when predicate action0 . actions)
+         (if predicate
+             (begin action0 . actions)
+             #f))))
+
     (define (read-byte . args)
       (let-optionals args ((s (current-input-port)))
         (let ((value (read-char s)))

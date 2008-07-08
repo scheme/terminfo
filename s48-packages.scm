@@ -33,6 +33,8 @@
                                   read-byte
                                   tty-info tty-info:output-speed
                                   uname uname:os-name
+                                  (when   :syntax)
+                                  (unless :syntax)
                                   (with-current-input-port  :syntax)
                                   (with-current-output-port :syntax))
   (open (modify ascii (rename (ascii->char integer->char)
@@ -47,6 +49,21 @@
         (subset util (unspecific)))
   (for-syntax (open scheme i/o-internal))
   (begin
+
+    (define-syntax unless
+      (syntax-rules ()
+        ((unless predicate action0 . actions)
+         (if predicate
+             #f
+             (begin action0 . actions)))))
+
+    (define-syntax when
+      (syntax-rules ()
+        ((when predicate action0 . actions)
+         (if predicate
+             (begin action0 . actions)
+             #f))))
+
     (define ignore (unspecific))
     (define (tty-info port) ignore)
     (define (uname) ignore)
