@@ -2,10 +2,9 @@
 
 (define-structure terminfo terminfo-interface
   (open
-   (modify ascii (rename (ascii->char integer->char)
-                         (char->ascii char->integer)))
+   ascii
    srfi-1 srfi-6 srfi-9 srfi-11 srfi-13 srfi-14
-   (modify scheme (hide char->integer integer->char ))
+   scheme
    error-package
    field-reader-package
    scsh-level-0
@@ -34,7 +33,7 @@
         (let ((value (read-char s)))
           (if (eof-object? value)
               (error "invalid data")
-              (char->integer value))))) )
+              (char->ascii value))))) )
   (files terminfo
          terminfo-capabilities
          utilities))

@@ -44,7 +44,7 @@
 	(prefix  (string-ref name 0)))
     (cond
      ((string=? os-name "Darwin")
-      (string-pad (number->string (char->integer prefix) #x10) 2 #\0))
+      (string-pad (number->string (char->ascii prefix) #x10) 2 #\0))
      (else (string prefix)))))
 
 (define (open-terminfo-file name)
@@ -70,7 +70,7 @@
   (let-optionals args ((s (current-input-port)))
     (let loop ((char   (read-char s))
                (result '()))
-      (if (or (eof-object? char) (zero? (char->integer char)))
+      (if (or (eof-object? char) (zero? (char->ascii char)))
           ((infix-splitter "|") (reverse-list->string result))
           (loop (read-char s)
                 (cons char result))))))
@@ -146,17 +146,17 @@
   (let-optionals args ((output-port (current-output-port)))
     (with-current-output-port output-port
         (case c
-          ((#\E) (write (integer->char 27)))
-          ((#\e) (write (integer->char 27)))
+          ((#\E) (write (ascii->char 27)))
+          ((#\e) (write (ascii->char 27)))
           ((#\n) (newline))
-          ((#\l) (write (integer->char 10)))
-          ((#\r) (write (integer->char 13)))
-          ((#\t) (write (integer->char 9)))
-          ((#\b) (write (integer->char 8)))
-          ((#\f) (write (integer->char 12)))
+          ((#\l) (write (ascii->char 10)))
+          ((#\r) (write (ascii->char 13)))
+          ((#\t) (write (ascii->char 9)))
+          ((#\b) (write (ascii->char 8)))
+          ((#\f) (write (ascii->char 12)))
           ((#\s) (write #\space))
           ((#\,) (write #\,))
-          ((#\0) (write (integer->char 0)))
+          ((#\0) (write (ascii->char 0)))
           ((#\\) (write #\\))
           ((#\^) (write #\^))
           ((#\:) (write #\:))
@@ -166,14 +166,14 @@
   (let-optionals args ((output-port (current-output-port)))
     (with-current-output-port output-port
         (case c
-          ((#\@) (write (integer->char 0)))   ; Null character
-          ((#\[) (write (integer->char 33)))  ; Escape
-          ((#\\) (write (integer->char 34)))  ; File separator
-          ((#\]) (write (integer->char 35)))  ; Group separator
-          ((#\^) (write (integer->char 36)))  ; Record separator
-          ((#\_) (write (integer->char 37)))  ; Unit separator
-          ((#\?) (write (integer->char 177))) ; Delete
-          (else  (write (integer->char (letter->number c))))))))
+          ((#\@) (write (ascii->char 0)))   ; Null character
+          ((#\[) (write (ascii->char 33)))  ; Escape
+          ((#\\) (write (ascii->char 34)))  ; File separator
+          ((#\]) (write (ascii->char 35)))  ; Group separator
+          ((#\^) (write (ascii->char 36)))  ; Record separator
+          ((#\_) (write (ascii->char 37)))  ; Unit separator
+          ((#\?) (write (ascii->char 177))) ; Delete
+          (else  (write (ascii->char (letter->number c))))))))
 
 (define (write-param-capability s i stack svars dvars params . args)
   (let-optionals args ((output-port (current-output-port)))
@@ -185,7 +185,7 @@
 
           ((#\c) ; %c -> print pop() like %c in printf
            (let* ((v   (pop stack))
-                  (val (if (number? v) (integer->char v) v)))
+                  (val (if (number? v) (ascii->char v) v)))
              (display val)
              (values (+ 1 i) (cdr stack) svars dvars params)))
 
@@ -291,7 +291,7 @@
   (define (char-flag? c)
     (member? c '(#\+ #\- #\# #\space)))
   (define (as-number x)
-    (cond ((char? x) (char->integer x))
+    (cond ((char? x) (char->ascii x))
           ((number? x) x)
           (else (error x "Cannot convert to number."))))
   (define (as-string v base)
@@ -393,7 +393,7 @@
           (when (positive? (vector-ref strings i))
             (let* ((start  (vector-ref strings i))
                    (end    (string-index stringtable
-                                         (integer->char 0)
+                                         (ascii->char 0)
                                          start szstringtable))
                    (substr (substring stringtable start end)))
               (vector-set! strings i substr))))

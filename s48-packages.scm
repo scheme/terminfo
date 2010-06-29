@@ -1,10 +1,9 @@
 ;;; -*- Mode: Scheme; scheme48-package: (config) -*-
 
 (define-structure terminfo terminfo-interface
-  (open (modify ascii (rename (ascii->char integer->char)
-                              (char->ascii char->integer)))
+  (open ascii
         let-opt
-        (modify scheme (hide integer->char char->integer))
+        scheme
         support
         (subset threads (sleep))
         srfi-1 srfi-6 srfi-9 srfi-11 srfi-13 srfi-14 srfi-23 srfi-60 srfi-69)
@@ -37,11 +36,10 @@
                                   (unless :syntax)
                                   (with-current-input-port  :syntax)
                                   (with-current-output-port :syntax))
-  (open (modify ascii (rename (ascii->char integer->char)
-                              (char->ascii char->integer)))
+  (open ascii
         i/o-internal
         let-opt
-        (modify scheme (hide integer->char char->integer))
+        scheme
         posix
         (subset signals (error))
         srfi-13
@@ -93,7 +91,7 @@
         (let ((value (read-char s)))
           (if (eof-object? value)
               (error "invalid data")
-              (char->integer value)))))
+              (char->ascii value)))))
 
     (define-syntax with-current-input-port
       (syntax-rules ()

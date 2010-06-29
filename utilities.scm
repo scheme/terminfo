@@ -10,19 +10,19 @@
 
 (define (char->digit c)
   (if (char-set-contains? char-set:digit c)
-      (- (char->integer c) (char->integer #\0))
+      (- (char->ascii c) (char->ascii #\0))
       (error c "This is not a digit")))
 
 (define (letter->number c)
   (if (char-alphabetic? c)
-      (+ 1 (- (char->integer (char-upcase c)) (char->integer #\A)))
+      (+ 1 (- (char->ascii (char-upcase c)) (char->ascii #\A)))
       (error c "This is not a letter")))
 
 (define (number->letter n)
   (if (or (negative? n)
           (> n 26))
       (error n "This is not between 1 and 26")
-      (integer->char (+ (- n 1) (char->integer #\a)))))
+      (ascii->char (+ (- n 1) (char->ascii #\a)))))
 
 (define push cons)
 (define (pop stack)
