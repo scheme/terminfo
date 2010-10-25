@@ -7,7 +7,8 @@
 
 (define *current-terminal*     '())
 (define *terminfo-directories* '("/usr/share/terminfo"
-                                 "/usr/share/misc/terminfo"))
+                                 "/usr/share/misc/terminfo"
+                                 "/lib/terminfo"))
 
 (define console-input-port     (current-input-port))
 (define console-output-port    (current-output-port))
@@ -53,10 +54,9 @@
       (let* ((basedir (car dirs))
              (initial (terminfo-directory-prefix name))
              (file    (path-list->file-name (list basedir initial name))))
-        (cond ((file-not-exists? file)
-               (error "Cannot find terminfo named " name))
-              ((file-readable? file) (open-input-file file))
-              (else (loop (cdr dirs))))))))
+        (if (file-readable? file)
+            (open-input-file file)
+            (loop (cdr dirs)))))))
 
 (define (read-short . args)
   (let-optionals args ((s (current-input-port)))
