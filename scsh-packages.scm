@@ -26,14 +26,7 @@
         ((when predicate action0 . actions)
          (if predicate
              (begin action0 . actions)
-             #f))))
-
-    (define (read-byte . args)
-      (let-optionals args ((s (current-input-port)))
-        (let ((value (read-char s)))
-          (if (eof-object? value)
-              (error "invalid data")
-              (char->ascii value))))) )
+             #f)))))
   (files terminfo
          terminfo-capabilities
          utilities))
